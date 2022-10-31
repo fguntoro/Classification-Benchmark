@@ -188,3 +188,6 @@ workflow/rules/representation/.snakemake
 .vscode/settings.json
 *.log
 .snakemake
+AllLabels.csv
+ukb_var_denoised.csv
+output

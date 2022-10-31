@@ -307,6 +307,70 @@ def abs_path(file_path):
     return os.path.join(os.getcwd(), file_path)
 
 
+def print_dataframe(filtered_cv_results):
+    """Pretty print for filtered dataframe"""
+    for mean_balanced_accuracy, std_balanced_accuracy, params in zip(
+        filtered_cv_results["mean_balanced_accuracy"],
+        filtered_cv_results["std_balanced_accuracy"],
+        filtered_cv_results["params"],
+    ):
+        print(
+            f"balanced_accuracy: {mean_balanced_accuracy:0.3f} (±{std_balanced_accuracy:0.03f}),"
+            f" for {params}"
+        )
+    print()
+
+def refit_strategy(cv_results):
+    """Define the strategy to select the best estimator.
+
+    The strategy defined here is to keep all models with one standard
+    deviation of the best by balanced accuracy. Once these models are selected, we can select the
+    fastest model to predict.
+
+    Parameters
+    ----------
+    cv_results : dict of numpy (masked) ndarrays
+        CV results as returned by the `GridSearchCV` or `RandomizedSearchCV`.
+
+    Returns
+    -------
+    best_index : int
+        The index of the best estimator as it appears in `cv_results`.
+    """
+    # print the info about the grid-search for the different scores
+    cv_results_ = pd.DataFrame(cv_results)
+    print("All grid-search results:")
+    print_dataframe(cv_results_)
+
+    # Select the most performant models in terms of balanced accuracy
+    # (within 1 sigma from the best)
+    best_balanced_accuracy_std = cv_results_["mean_test_balanced_accuracy"].std()
+    best_balanced_accuracy = cv_results_["mean_test_balanced_accuracy"].max()
+    best_balanced_accuracy_threshold = best_balanced_accuracy - best_balanced_accuracy_std
+
+    high_balanced_accuracy_cv_results = cv_results_[
+        cv_results_["mean_test_balanced_accuracy"] > best_balanced_accuracy_threshold
+    ]
+    print(
+        "Out of the previously selected high balanced accuracy models, we keep all the\n"
+        "the models within one standard deviation of the highest balanced accuracy model:"
+    )
+    print_dataframe(high_balanced_accuracy_cv_results)
+    
+    # From the best candidates, select the fastest model to predict
+    fastest_top_balanced_accuracy_index = high_balanced_accuracy_cv_results[
+        "mean_score_time"
+    ].idxmin()
+
+    print(
+        "\nThe selected final model is the fastest to predict out of the previously\n"
+        "selected subset of best models based on balanced accuracy.\n"
+        "Its scoring time is:\n\n"
+        f"{high_balanced_accuracy_cv_results.loc[fastest_top_balanced_accuracy_index]}"
+    )
+
+    return fastest_top_balanced_accuracy_index
+
 if __name__ == "__main__":
     """
     Main method for testing config_reader

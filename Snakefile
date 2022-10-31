@@ -6,7 +6,6 @@ configfile: "config.yaml"
 ##################################
 
 
-include: "workflow/rules/representation/snakefile"
 include: "workflow/rules/prediction/snakefile"
 
 
@@ -18,6 +17,6 @@ include: "workflow/rules/prediction/snakefile"
 rule all:
     input:
         expand(
-            config["OUTPUT_DIR"] + "/{bacterium}/prediction/summary.csv",
-            bacterium=config["BACTERIA"],
+            config["OUTPUT_DIR"] + "/{group}/prediction/summary.csv",
+            group=config["GROUP"],
         )

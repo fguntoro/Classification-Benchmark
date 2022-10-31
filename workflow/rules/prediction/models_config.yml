@@ -1,8 +1,8 @@
 TrainTestSplit:
   random_state: &seed 33
   test_size: 0.2
-  shuffle: True
-  stratify: True
+  # shuffle: True
+  # stratify: None
 
 SplitterClass:
   module: sklearn.model_selection
@@ -12,7 +12,7 @@ SplitterClass:
     random_state: 8
 
 CrossValidation:
-  refit: 'mean_squared_log_error'
+  # refit: 'mean_squared_log_error'
   n_jobs: 8
   return_train_score: True
   verbose: 2
@@ -94,10 +94,14 @@ Models:
       n_jobs: -1
       class_weight: 'balanced'
     cv:
-      n_estimators: [100, 300, 500, 1000]
-      max_depth: [5, 10, 15, 30]
-      min_samples_split: [2, 5, 10, 15]
-      min_samples_leaf: [1, 2, 5, 10]
+      n_estimators: [100, 1000]
+      max_depth: [5]
+      min_samples_split: [2]
+      min_samples_leaf: [1, 10]
+      # n_estimators: [100, 300, 500, 1000]
+      # max_depth: [5, 10, 15, 30]
+      # min_samples_split: [2, 5, 10, 15]
+      # min_samples_leaf: [1, 2, 5, 10]
 
   sklearn_DT:
     module: sklearn.tree

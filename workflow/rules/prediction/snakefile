@@ -1,3 +1,5 @@
+import yaml
+
 configfile: "workflow/rules/prediction/models_config.yml"
 
 
@@ -5,6 +7,7 @@ with open("config.yaml") as file:
     global_config = yaml.load(file, yaml.FullLoader)
 
 path_data = global_config["PATH_DATA"] + "/"
+path_label = global_config["PATH_LABEL"] + "/"
 output_dir = global_config["OUTPUT_DIR"] + "/"
 
 
@@ -12,7 +15,7 @@ rule build_model:
     input:
         conf="workflow/rules/prediction/models_config.yml",
     output:
-        output_dir + "{bacterium}/prediction/models/{method}.joblib",
+        output_dir + "{group}/prediction/models/{method}.joblib",
     conda:
         "../../envs/prediction/env.yml"
     shell:
@@ -21,17 +24,15 @@ rule build_model:
 
 rule evaluation_sklearn:
     input:
-        data=output_dir + "{bacterium}/representation/{representation}/0_matrix.csv",
-        label=path_data + "{bacterium}/AllLabels.csv",
-        model=output_dir + "{bacterium}/prediction/models/{method}.joblib",
+        data=path_data,
+        label=path_label,
+        model=output_dir + "{group}/prediction/models/{method}.joblib",
         conf="workflow/rules/prediction/models_config.yml",
-    params:
-        drug="{drug}",
     output:
         evaluation = output_dir
-        + "{bacterium}/prediction/results/{representation}/{method}-{drug}.csv",
+        + "{group}/prediction/results/{method}.csv",
         fitted_model = output_dir
-        + "{bacterium}/prediction/results/fitted_models/{representation}/{method}-{drug}.joblib",
+        + "{group}/prediction/results/fitted_models/{method}.joblib",
     wildcard_constraints:
         method = "sklearn_.*"
     conda:
@@ -42,10 +43,10 @@ rule evaluation_sklearn:
 
 use rule evaluation_sklearn as evaluation_ingot with:
     input:
-        model=output_dir + "{bacterium}/prediction/models/INGOT.joblib",
+        model=output_dir + "{group}/prediction/models/INGOT.joblib",
     output:
         output_dir
-        + "{bacterium}/prediction/results/{representation}/INGOT-{drug}.csv",
+        + "{group}/prediction/results/INGOT.csv",
     conda:
         "../../envs/prediction/ingot.yml"
 
@@ -53,17 +54,15 @@ rule aggregate_summary:
     input:
         lambda wildcards: expand(
             output_dir
-            + "{bacterium}/prediction/results/{representation}/{method}-{drug}.csv",
-            representation=global_config["REPRESENTATION"],
+            + "{group}/prediction/results/{method}.csv",
             method=global_config["METHODS"],
-            drug=global_config["DRUGS"],
-            bacterium=wildcards.bacterium,
+            group=wildcards.group,
             allow_missing=True,
         ),
     params:
         config=config,
     output:
-        output_dir + "{bacterium}/prediction/summary.csv",
+        output_dir + "{group}/prediction/summary.csv",
     script:
         "../../scripts/prediction/aggregate.py"
 

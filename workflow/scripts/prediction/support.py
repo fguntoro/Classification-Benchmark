@@ -21,9 +21,9 @@ def preprocess(data, label):
 
     labels = pd.DataFrame()
 
-    for drug in label.columns:
-        labels = pd.concat([labels, data[[drug]]], axis=1)
-        data = data.drop([drug], axis=1)
+    for col in label.columns:
+        labels = pd.concat([labels, data[[col]]], axis=1)
+        data = data.drop([col], axis=1)
 
     print("label set: {0}".format(labels.shape))
     print("data set: {0}".format(data.shape))
@@ -33,7 +33,7 @@ def preprocess(data, label):
 
 
 def model_fitting(
-    drug,
+    col,
     X_train,
     y_train,
     mode,
@@ -103,6 +103,7 @@ def model_fitting(
                 param_grid=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
+                refit=utils.refit_strategy,
                 **config_file["CrossValidation"]
             )
 
@@ -112,6 +113,7 @@ def model_fitting(
                 param_distributions=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
+                refit= utils.refit_strategy,
                 **config_file["CrossValidation"]
             )
 

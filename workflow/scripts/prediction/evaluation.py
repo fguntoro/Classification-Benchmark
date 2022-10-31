@@ -10,9 +10,7 @@ labels_file = snakemake.input["label"]
 model = snakemake.input["model"]
 method = snakemake.wildcards.method
 method_config_file = snakemake.input["conf"]
-drug = snakemake.wildcards.drug
-representation = snakemake.wildcards.representation
-
+group = snakemake.wildcards.group
 
 mode = snakemake.config["MODE"]
 optimization = snakemake.config["OPTIMIZATION"]
@@ -46,9 +44,9 @@ def main():
 
     results = pd.DataFrame()
 
-    print("Analysing {0}".format(drug))
+    print("Analysing {0}".format(group))
 
-    y = np.ravel(labels[[drug]])
+    y = np.ravel(labels[[group]])
     na_index = np.isnan(y)
     y = y[~na_index]
 
@@ -63,7 +61,6 @@ def main():
     print("Train-Test split")
     # Make sure that stratified split is disabled for regression models
 
-    
     if mode == "Classification":
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, **config_file["TrainTestSplit"]
@@ -86,7 +83,7 @@ def main():
     print("Fitting training data")
     start_time = time.time()
     clf, best_parameters = model_fitting(
-        drug,
+        group,
         X_train,
         y_train,
         mode,
@@ -116,12 +113,12 @@ def main():
             output_evaluation.rsplit(".")[0] + "_regression_test_values.csv"
         )
 
-        save_regression_test_values(y_test, y_pred, output_file_regression_test_values)
+        save_regression_test_values(
+            y_test, y_pred, output_file_regression_test_values)
 
     result.insert(0, "Method", method)
     result.insert(1, "Parameters", best_parameters)
-    result.insert(2, "Representation", representation)
-    result.insert(3, "Drug", drug)
+    result.insert(3, "Group", group)
     result.insert(4, "Time", end_time - start_time)
 
     results = results.append(result)
