@@ -21,6 +21,7 @@ output_fitted_model = snakemake.output["fitted_model"]
 
 def main():
     from joblib import dump
+    from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
     from skopt import BayesSearchCV
     from support import (
@@ -52,6 +53,8 @@ def main():
 
     X = data
     X = X.loc[~na_index, :]
+    X = MinMaxScaler().fit_transform(X)
+    # X = pd.DataFrame(X, columns=data.columns)
     X = sparse.csr_matrix(X)
 
     print("Data shape: {}".format(X.shape))
@@ -121,6 +124,7 @@ def main():
     result.insert(3, "Group", group)
     result.insert(4, "Time", end_time - start_time)
 
+    # results = pd.concat([results, result])
     results = results.append(result)
     print("_______________________________")
 

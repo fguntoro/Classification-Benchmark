@@ -41,15 +41,6 @@ rule evaluation_sklearn:
     script:
         "../../scripts/prediction/evaluation.py"
 
-use rule evaluation_sklearn as evaluation_ingot with:
-    input:
-        model=output_dir + "{group}/prediction/models/INGOT.joblib",
-    output:
-        output_dir
-        + "{group}/prediction/results/INGOT.csv",
-    conda:
-        "../../envs/prediction/ingot.yml"
-
 rule aggregate_summary:
     input:
         lambda wildcards: expand(

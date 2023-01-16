@@ -46,6 +46,7 @@ Models:
       penalty: 'l2'
       n_jobs: -1
       class_weight: 'balanced'
+      solver: 'liblinear'
     cv:
       max_iter: np.logspace(1, 5, base=10, num=5)
       solver: ['newton-cg','sag','lbfgs']
@@ -59,10 +60,11 @@ Models:
       solver: 'saga'
       n_jobs: -1
       class_weight: 'balanced'
+      l1_ratio: 0.5
     cv:
-      max_iter: np.logspace(1, 5, base=10, num=5)
-      l1_ratio: [0.25, 0.5, 0.75]
-      C: np.logspace(-4, 4, base=10, num=5)
+      max_iter: np.logspace(2, 3, base=10, num=1)
+      l1_ratio: [0.25, 0.75]
+      C: np.logspace(-2, 1, base=10, num=1)
 
   sklearn_SVM_l1:
     module: sklearn.svm
@@ -140,7 +142,7 @@ Models:
     module: sklearn.ensemble
     model: GradientBoostingClassifier
     params:
-      max_features: 'auto'
+      max_features: 1.0
       n_iter_no_change: 20
     cv:
       learning_rate: [0.001, 0.01, 0.1, 1]
@@ -154,10 +156,10 @@ Models:
     params:
       n_jobs: -1
       class_weight: 'balanced'
+      penalty: 'l1'
+      loss: 'log_loss'
     cv:
-      penalty: ['l1']
       max_iter: np.logspace(1, 5, base=10, num=5)
-      loss: ['hinge', 'log']
       alpha: np.logspace(-4, 0, base=10, num=5)
 
   sklearn_SGDC_l2:
@@ -166,10 +168,10 @@ Models:
     params:
       n_jobs: -1
       class_weight: 'balanced'
+      penalty: 'l2'
+      loss: 'log_loss'
     cv:
-      penalty: ['l2']
       max_iter: np.logspace(1, 5, base=10, num=5)
-      loss: ['hinge', 'log']
       alpha: np.logspace(-4, 0, base=10, num=5)
     
   sklearn_SGDC_elasticnet:
@@ -178,10 +180,10 @@ Models:
     params:
       n_jobs: -1
       class_weight: 'balanced'
+      penalty: 'elasticnet'
+      loss: 'log_loss'
     cv:
-      penalty: ['elasticnet']
       max_iter: np.logspace(2, 5, base=10, num=4)
-      loss: ['hinge', 'log']
       alpha: np.logspace(-4, 0, base=10, num=5)
       l1_ratio: [0.25, 0.5, 0.75]
 

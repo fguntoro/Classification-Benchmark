@@ -103,7 +103,8 @@ def model_fitting(
                 param_grid=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
-                refit=utils.refit_strategy,
+                refit="balanced_accuracy",
+                #refit=utils.refit_strategy,
                 **config_file["CrossValidation"]
             )
 
@@ -113,7 +114,8 @@ def model_fitting(
                 param_distributions=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
-                refit= utils.refit_strategy,
+                refit="balanced_accuracy",
+                #refit= utils.refit_strategy,
                 **config_file["CrossValidation"]
             )
 

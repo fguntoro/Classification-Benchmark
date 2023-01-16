@@ -310,8 +310,8 @@ def abs_path(file_path):
 def print_dataframe(filtered_cv_results):
     """Pretty print for filtered dataframe"""
     for mean_balanced_accuracy, std_balanced_accuracy, params in zip(
-        filtered_cv_results["mean_balanced_accuracy"],
-        filtered_cv_results["std_balanced_accuracy"],
+        filtered_cv_results["mean_test_balanced_accuracy"],
+        filtered_cv_results["std_test_balanced_accuracy"],
         filtered_cv_results["params"],
     ):
         print(

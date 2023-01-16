@@ -1,15 +1,20 @@
-PATH_DATA: "/rds/general/project/chadeau_ukbb_folder/live/projects/covid19_metabolomics/Data/outputs/ukb_var_denoised.csv"
-PATH_LABEL: "/rds/general/project/chadeau_ukbb_folder/live/projects/covid19_metabolomics/Data/outputs/AllLabels.csv"
-# PATH_DATA: "ukb_var_denoised.csv"
-# PATH_LABEL: "AllLabels.csv"
+# PATH_DATA: "/rds/general/project/chadeau_ukbb_folder/live/projects/covid19_metabolomics/Data/outputs/ukb_var_denoised.csv"
+# PATH_LABEL: "/rds/general/project/chadeau_ukbb_folder/live/projects/covid19_metabolomics/Data/outputs/AllLabels.csv"
+PATH_DATA: "ukb_var_denoised.csv"
 
-GROUP: ["lvl1", "lvl2"]
+PATH_LABEL: "AllLabels.csv"
 
-OUTPUT_DIR: "/rds/general/user/fg520/home/covid19_metabolomics_2022"
-# OUTPUT_DIR: "output"
+GROUP: ["hes"]
+
+# OUTPUT_DIR: "/rds/general/user/fg520/home/covid19_metabolomics_2022"
+OUTPUT_DIR: "output_optGrid"
 
 MODE: "Classification" # "Classification"/"MIC"
 
-METHODS: ["sklearn_LR_l1", "sklearn_LR_l2", "sklearn_LR_elasticnet", "sklearn_SGD_l1", "sklearn_SGD_l2", "sklearn_SGD_elasticnet", "sklearn_DT", "sklearn_RFC", "sklearn_ET", "sklearn_ADB", "sklearn_GBTC", "sklearn_GNB", "sklearn_CNB", "sklearn_SVM_l1", "sklearn_SVM_l2", "sklearn_KNN"] #Classification ["sklearn_LR_l1", "sklearn_LR_l2", "sklearn_LR_elasticnet", "sklearn_SGD_l1", "sklearn_SGD_l2", "sklearn_SGD_elasticnet", "sklearn_DT", "sklearn_RFC", "sklearn_ET", "sklearn_ADB", "sklearn_GBTC", "sklearn_GNB", "sklearn_CNB", "sklearn_SVM_l1", "sklearn_SVM_l2", "sklearn_KNN", "INGOT"]
+METHODS: ["sklearn_LR_elasticnet"] #, "sklearn_LR_l1", "sklearn_LR_l2", "sklearn_SGDC_l1", "sklearn_SGDC_l2", "sklearn_SGDC_elasticnet", "sklearn_DT", "sklearn_RFC", "sklearn_ET", "sklearn_ADB", "sklearn_GBTC", "sklearn_CNB", "sklearn_SVM_l1", "sklearn_SVM_l2", "sklearn_KNN"] #Classification ["sklearn_LR_l1", "sklearn_LR_l2", "sklearn_LR_elasticnet", "sklearn_SGD_l1", "sklearn_SGD_l2", "sklearn_SGD_elasticnet", "sklearn_DT", "sklearn_RFC", "sklearn_ET", "sklearn_ADB", "sklearn_GBTC", "sklearn_GNB", "sklearn_CNB", "sklearn_SVM_l1", "sklearn_SVM_l2", "sklearn_KNN", "INGOT"]
+#"sklearn_GNB",
 
 OPTIMIZATION: "GridSearchCV" # 'GridSearchCV', 'RandomizedSearchCV', 'BayesSearchCV' and "None"
+
+# TODO match variable name list as txt file, allow subset. For now must create multiple data file, and change path_data.
+# TODO multiclass
