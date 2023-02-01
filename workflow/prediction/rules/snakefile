@@ -1,6 +1,6 @@
 import yaml
 
-configfile: "workflow/rules/prediction/models_config.yml"
+configfile: "workflow/prediction/rules/models_config.yml"
 
 
 with open("config.yaml") as file:
@@ -13,13 +13,13 @@ output_dir = global_config["OUTPUT_DIR"] + "/"
 
 rule build_model:
     input:
-        conf="workflow/rules/prediction/models_config.yml",
+        conf="workflow/prediction/rules/models_config.yml",
     output:
         output_dir + "{group}/prediction/models/{method}.joblib",
     conda:
-        "../../envs/prediction/env.yml"
+        "../../prediction/envs/env.yml"
     shell:
-        "python workflow/scripts/prediction/build_model.py --config {input.conf} --model-name {wildcards.method} --outfile {output}"
+        "python workflow/prediction/scripts/build_model.py --config {input.conf} --model-name {wildcards.method} --outfile {output}"
 
 
 rule evaluation_sklearn:
@@ -27,19 +27,19 @@ rule evaluation_sklearn:
         data=path_data,
         label=path_label,
         model=output_dir + "{group}/prediction/models/{method}.joblib",
-        conf="workflow/rules/prediction/models_config.yml",
+        conf="workflow/prediction/rules/models_config.yml",
     output:
         evaluation = output_dir
         + "{group}/prediction/results/{method}.csv",
         fitted_model = output_dir
         + "{group}/prediction/results/fitted_models/{method}.joblib",
-    wildcard_constraints:
-        method = "sklearn_.*"
+#    wildcard_constraints:
+#        method = "sklearn_.*"
     conda:
-        "../../envs/prediction/env.yml"
+        "../../prediction/envs/env.yml"
     threads: 8
     script:
-        "../../scripts/prediction/evaluation.py"
+        "../../prediction/scripts/evaluation.py"
 
 rule aggregate_summary:
     input:
@@ -55,7 +55,7 @@ rule aggregate_summary:
     output:
         output_dir + "{group}/prediction/summary.csv",
     script:
-        "../../scripts/prediction/aggregate.py"
+        "../../prediction/scripts/aggregate.py"
 
 
 # TODO rule visual_report:

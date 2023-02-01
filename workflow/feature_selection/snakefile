@@ -1,0 +1,25 @@
+import yaml
+
+with open("config.yaml") as file:
+    global_config = yaml.load(file, yaml.FullLoader)
+
+path_data = global_config["PATH_DATA"] + "/"
+path_label = global_config["PATH_LABEL"] + "/"
+output_dir = global_config["OUTPUT_DIR"] + "/"
+
+
+###############################
+#                             #
+# Rules for Feature Selection #
+#                             #
+###############################
+
+
+rule stability_selection:
+    input:
+        data = path_data,
+        label = path_label,
+    output:
+        output_dir + "{group}/feature_selection/stability.csv",
+    shell:
+        "Rscript stability_analysis.R --data {input.path_data} --label {input.path_label} --outfile {output}"

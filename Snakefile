@@ -6,7 +6,7 @@ configfile: "config.yaml"
 ##################################
 
 
-include: "workflow/rules/prediction/snakefile"
+include: "workflow/prediction/rules/snakefile"
 
 
 ########################
