@@ -1,3 +1,3 @@
 # Classification Benchmark
 
-Snakemake pipeline to train and evaluate machine learning prediction models in context of multi omics data analysis.
+Snakemake pipeline for large multi-omics data analysis. Current usage to train and evaluate machine learning prediction models.
