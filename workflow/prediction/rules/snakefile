@@ -56,6 +56,3 @@ rule aggregate_summary:
         output_dir + "{group}/prediction/summary.csv",
     script:
         "../../prediction/scripts/aggregate.py"
-
-
-# TODO rule visual_report:

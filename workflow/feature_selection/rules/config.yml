@@ -1,0 +1,45 @@
+Feature_Selection:
+  # Methods included in the Scikit-Learn Package
+  # For further information, please refer to https://scikit-learn.org/stable/
+
+  VarianceThreshold:
+    module: sklearn.feature_selection
+    name: VarianceThreshold
+    params:
+      threshold: 0.16
+
+  SelectKBest:
+    module: sklearn.feature_selection
+    name: SelectKBest
+    params:
+      k: 10
+
+  SelectPercentile:
+    module: sklearn.feature_selection
+    name: SelectPercentile
+    params:
+      percentile: 20
+
+  SelectFpr:
+    module: sklearn.feature_selection
+    name: SelectFpr
+    params:
+      alpha: 0.05
+
+  SelectFdr:
+    module: sklearn.feature_selection
+    name: SelectFpr
+    params:
+      alpha: 0.05
+
+  SelectFwe:
+    module: sklearn.feature_selection
+    name: SelectFpr
+    params:
+      alpha: 0.05
+
+  SelectPercentile:
+    module: sklearn.feature_selection
+    name: SelectPercentile
+    params:
+      percentile: 20
