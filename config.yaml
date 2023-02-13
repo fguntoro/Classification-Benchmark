@@ -5,12 +5,12 @@ GROUP: ["binary"]
 
 OUTPUT_DIR: "../Classification_Benchmark_Data/Kaggle_Hotel_Reservations/output"
 
-MODE: "Classification" # "Classification"/"MIC"
+MODE: "Classification" # "Classification"/"Regression"
 
-FEATURE_SELECTION: ["SelectKBest", "SelectFdr"]
+FEATURE_SELECTION: ["VarianceThreshold", "RFE", "stability"]
 
 METHODS: ["LR_elasticnet", "RFC"] #, "LR_l1", "LR_l2", "SGDC_l1", "SGDC_l2", , "DT", , "ET",  , "CNB", "SVM_l1", "SVM_l2", "KNN"] #Classification ["LR_l1", "LR_l2", "LR_elasticnet", "SGD_l1", "SGD_l2", "SGD_elasticnet", "DT", "RFC", "ET", "ADB", "GBTC", "GNB", "CNB", "SVM_l1", "SVM_l2", "KNN", "INGOT"]
-#"GNB",
+#"GNB"
 
 OPTIMIZATION: "None" # 'GridSearchCV', 'RandomizedSearchCV', 'BayesSearchCV' and "None"
 

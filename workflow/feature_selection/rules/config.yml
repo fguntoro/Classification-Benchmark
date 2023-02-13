@@ -1,3 +1,5 @@
+estimator: "LR_elasticnet"
+
 Feature_Selection:
   # Methods included in the Scikit-Learn Package
   # For further information, please refer to https://scikit-learn.org/stable/
@@ -38,8 +40,41 @@ Feature_Selection:
     params:
       alpha: 0.05
 
-  SelectPercentile:
+  RFE:
     module: sklearn.feature_selection
-    name: SelectPercentile
+    name: RFE
     params:
-      percentile: 20
+      n_features_to_select: 0.2
+      step: 1
+
+  RFECV:
+    module: sklearn.feature_selection
+    name: RFECV
+    params:
+      step: 1
+      min_features_to_select: 1
+      scoring: "accuracy"
+      cv: 5
+      n_jobs: -1
+      verbose: 1
+
+  SelectFromModel:
+    module: sklearn.feature_selection
+    name: SelectFromModel
+    params:
+      threshold: "mean"
+
+  SequentialFeatureSelectorForward:
+    module: sklearn.feature_selection
+    name: SequentialFeatureSelector
+    params:
+      n_features_to_select: 0.2
+      direction: "forward"
+      cv: 5
+
+  SequentialFeatureSelectorBackward:
+    module: sklearn.feature_selection
+    name: SequentialFeatureSelector
+    params:
+      direction: "backward"
+      cv: 5

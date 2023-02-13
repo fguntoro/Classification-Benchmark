@@ -2,7 +2,7 @@ from joblib import dump
 import argparse
 import sys
 import os
-import utils
+import utility
 
 
 def main(sysargs=sys.argv[1:]):
@@ -30,9 +30,9 @@ def main(sysargs=sys.argv[1:]):
     print("________________")
     print(model)
 
-    config_file = utils.config_reader(args.config)
+    config_file = utility.config_reader(args.config)
 
-    current_module = utils.my_import(config_file["Models"][model]["module"])
+    current_module = utility.my_import(config_file["Models"][model]["module"])
     dClassifier = getattr(current_module, config_file["Models"][model]["model"])
     dClassifier = dClassifier(**config_file["Models"][model]["params"])
 

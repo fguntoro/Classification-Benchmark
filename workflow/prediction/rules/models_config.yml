@@ -30,11 +30,12 @@ Models:
     model: LogisticRegression
     params:
       n_jobs: -1
-      penalty: "None"
+      penalty: "none"
       class_weight: "balanced"
       solver: "lbfgs"
+      max_iter: 10000
     cv:
-      max_iter: np.logspace(1, 5, base=10, num=5, dtype=int)
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
       solver: ["lbfgs", "saga"]
       C: np.logspace(-4, 4, base=10, num=5)
 
@@ -46,8 +47,9 @@ Models:
       penalty: "l1"
       class_weight: "balanced"
       solver: "liblinear"
+      max_iter: 10000
     cv:
-      max_iter: np.logspace(1, 5, base=10, num=5, dtype=int)
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
       solver: ["liblinear", "saga"]
       C: np.logspace(-4, 4, base=10, num=5)
 
@@ -59,8 +61,9 @@ Models:
       n_jobs: -1
       class_weight: "balanced"
       solver: "liblinear"
+      max_iter: 10000
     cv:
-      max_iter: np.logspace(1, 5, base=10, num=5, dtype=int)
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
       solver: ["newton-cg", "sag", "lbfgs"]
       C: np.logspace(-4, 4, base=10, num=5)
 
@@ -85,8 +88,9 @@ Models:
       penalty: "l1"
       dual: False
       class_weight: "balanced"
+      max_iter: 10000
     cv:
-      max_iter: np.logspace(1, 5, base=10, num=5, dtype=int)
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
       loss: ["squared_hinge"]
       C: np.logspace(-4, 4, base=10, num=5)
 
@@ -96,8 +100,9 @@ Models:
     params:
       penalty: "l2"
       class_weight: "balanced"
+      max_iter: 10000
     cv:
-      max_iter: np.logspace(1, 5, base=10, num=5, dtype=int)
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
       loss: ["squared_hinge", "hinge"]
       C: np.logspace(-4, 4, base=10, num=5)
 

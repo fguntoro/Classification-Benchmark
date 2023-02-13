@@ -21,8 +21,7 @@ rule feature_selection:
         label = path_label,
         conf = "workflow/feature_selection/rules/config.yml",
     output:
-        output_dir + \
-            "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
+        output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
     shell:
         """
         if [[ "{wildcards.feature_selection}" == "stability" ]]; then

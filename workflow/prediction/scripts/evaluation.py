@@ -2,7 +2,6 @@ import sys
 import numpy as np
 import time
 import pandas as pd
-import utils
 from scipy import sparse
 
 data_file = snakemake.input["data"]
@@ -18,6 +17,9 @@ optimization = snakemake.config["OPTIMIZATION"]
 output_evaluation = snakemake.output["evaluation"]
 output_fitted_model = snakemake.output["fitted_model"]
 
+feature_selection = snakemake.config["FEATURE_SELECTION"]
+if feature_selection:
+    feature_file = snakemake.input["features"]
 
 def main():
     from joblib import dump
@@ -31,9 +33,13 @@ def main():
         evaluate_regression,
         save_regression_test_values,
     )
+    import utility
+    import pandas as pd
 
     data, labels = preprocess(data=data_file, label=labels_file)
-    config_file = utils.config_reader(method_config_file)
+    features = pd.read_csv(feature_file)["feature"]
+    #label.set_index(label.columns[0], inplace=True, drop=True)
+    config_file = utility.config_reader(method_config_file)
 
     print("Data file = ", data_file)
     print("Mode = ", mode)
@@ -52,9 +58,8 @@ def main():
     y = y[~na_index]
 
     X = data
-    X = X.loc[~na_index, :]
+    X = X.loc[~na_index, features]
     X = MinMaxScaler().fit_transform(X)
-    # X = pd.DataFrame(X, columns=data.columns)
     X = sparse.csr_matrix(X)
 
     print("Data shape: {}".format(X.shape))
@@ -82,7 +87,7 @@ def main():
     print("Test data shape: {}".format(X_test.shape))
     print("Test label shape: {}".format(y_test.shape))
     print("_______________________________")
-
+    
     print("Fitting training data")
     start_time = time.time()
     clf, best_parameters = model_fitting(

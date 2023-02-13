@@ -65,10 +65,10 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
   
     selected <- SelectedVariables(stab)
     p <- sum(selected)
-    all_variables <- (names(selprop)[sort.list(selprop, decreasing = TRUE)])[1:p]
-    data_filtered <- xdata[,all_variables]
+    all_variables <- data.frame(feature=(names(selprop)[sort.list(selprop, decreasing = TRUE)])[1:p])
+    #data_filtered <- xdata[,all_variables]
 
-    write.csv(data_filtered, paste0(output_dir,"/stability.csv"))
+    write.csv(all_variables, paste0(output_dir,"/stability.csv"), row.names=F)
   
   return(stab)
 }

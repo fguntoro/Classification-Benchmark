@@ -64,8 +64,17 @@ def main(sysargs=sys.argv[1:]):
         config_file["Feature_Selection"][feature_selection]["module"])
     Feature_Selector = getattr(
         current_module, config_file["Feature_Selection"][feature_selection]["name"])
-    Feature_Selector = Feature_Selector(
-        **config_file["Feature_Selection"][feature_selection]["params"])
+    params = config_file["Feature_Selection"][feature_selection]["params"]
+
+    if feature_selection in ["RFE", "RFECV" , "SelectFromModel" , "SequentialFeatureSelectorForward" , "SequentialFeatureSelectorBackward"]:
+        estimator_name = config_file["estimator"]
+        models_config_file = utils.config_reader("workflow/prediction/rules/models_config.yml")
+        current_module = utils.my_import(models_config_file["Models"][estimator_name]["module"])
+        estimator = getattr(current_module, models_config_file["Models"][estimator_name]["model"])
+        estimator = estimator(**models_config_file["Models"][estimator_name]["params"])
+        Feature_Selector = Feature_Selector(estimator, **params)        
+    else:
+        Feature_Selector = Feature_Selector(**params)
 
     print(Feature_Selector)
 
@@ -83,8 +92,8 @@ def main(sysargs=sys.argv[1:]):
     else:
         Feature_Selector.fit(X,y)
 
-    results =  X[X.columns[Feature_Selector.get_support(indices=True)]]
-    pd.DataFrame(results).to_csv(output, index=False)
+    results =  X.columns[Feature_Selector.get_support(indices=True)]
+    pd.DataFrame({"feature":results}).to_csv(output, index=False)
 
 
 main()

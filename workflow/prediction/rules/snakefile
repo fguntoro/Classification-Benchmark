@@ -29,10 +29,8 @@ rule evaluation_sklearn:
         model=output_dir + "{group}/prediction/models/{method}.joblib",
         conf="workflow/prediction/rules/models_config.yml",
     output:
-        evaluation = output_dir
-        + "{group}/prediction/results/{method}.csv",
-        fitted_model = output_dir
-        + "{group}/prediction/results/fitted_models/{method}.joblib",
+        evaluation = output_dir + "{group}/prediction/results/no_feature_selection/{method}.csv",
+        fitted_model = output_dir + "{group}/prediction/results/no_feature_selection/fitted_models/{method}.joblib",
 #    wildcard_constraints:
 #        method = "sklearn_.*"
     conda:
@@ -40,6 +38,17 @@ rule evaluation_sklearn:
     threads: 8
     script:
         "../../prediction/scripts/evaluation.py"
+
+use rule evaluation_sklearn as evaluate_feature_selection with:
+    input:
+        data=path_data,
+        features=output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
+        label=path_label,
+        model=output_dir + "{group}/prediction/models/{method}.joblib",
+        conf="workflow/prediction/rules/models_config.yml",
+    output:
+        evaluation = output_dir + "{group}/prediction/results/{feature_selection}/{method}.csv",
+        fitted_model = output_dir + "{group}/prediction/results/{feature_selection}/fitted_models/{method}.joblib",
 
 rule aggregate_summary:
     input:
