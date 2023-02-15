@@ -1,22 +1,22 @@
-import utils
+import utility
 import pandas as pd
 import numpy as np
 from joblib import load, dump
 
 
 def CVFolds(config_file):
-    module = utils.my_import(config_file["SplitterClass"]["module"])
+    module = utility.my_import(config_file["SplitterClass"]["module"])
     splitter = getattr(module, config_file["SplitterClass"]["splitter"])
     folds = splitter(**config_file["SplitterClass"]["params"])
     return folds
 
 
 def preprocess(data, label):
-    label = pd.read_csv(label)
-    label.set_index(label.columns[0], inplace=True, drop=True)
+    label = pd.read_csv(label, index_col=0)
+    #label.set_index(label.columns[0], inplace=True, drop=True)
 
-    data = pd.read_csv(data)
-    data.set_index(data.columns[0], inplace=True, drop=True)
+    data = pd.read_csv(data, index_col=0)
+    #data.set_index(data.columns[0], inplace=True, drop=True)
     data = data.merge(label, left_index=True, right_index=True)
 
     labels = pd.DataFrame()
@@ -60,10 +60,10 @@ def model_fitting(
     if mode == "Classification":
         scoring = dict(
             Accuracy="accuracy",
-            tp=make_scorer(utils.tp),
-            tn=make_scorer(utils.tn),
-            fp=make_scorer(utils.fp),
-            fn=make_scorer(utils.fn),
+            tp=make_scorer(utility.tp),
+            tn=make_scorer(utility.tn),
+            fp=make_scorer(utility.fp),
+            fn=make_scorer(utility.fn),
             balanced_accuracy=make_scorer(balanced_accuracy_score),
             f1score=make_scorer(f1_score),
             roc_auc=make_scorer(roc_auc_score),
@@ -94,6 +94,7 @@ def model_fitting(
                 param_grid[key] = eval(param_grid[key])
         param_grid = {ele: (list(param_grid[ele])) for ele in param_grid}
         print(param_grid)
+        
         for i in config_file["CrossValidation"].items():
             print("{}: {}".format(i[0], i[1]))
 
@@ -104,7 +105,7 @@ def model_fitting(
                 scoring=scoring,
                 cv=CVFolds(config_file),
                 refit="balanced_accuracy",
-                #refit=utils.refit_strategy,
+                #refit=utility.refit_strategy,
                 **config_file["CrossValidation"]
             )
 
@@ -115,7 +116,7 @@ def model_fitting(
                 scoring=scoring,
                 cv=CVFolds(config_file),
                 refit="balanced_accuracy",
-                #refit= utils.refit_strategy,
+                #refit= utility.refit_strategy,
                 **config_file["CrossValidation"]
             )
 

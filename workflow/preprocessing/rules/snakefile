@@ -1,0 +1,29 @@
+import yaml
+
+with open("config.yaml") as file:
+    global_config = yaml.load(file, yaml.FullLoader)
+
+path_data = global_config["PATH_DATA"] + "/"
+path_label = global_config["PATH_LABEL"] + "/"
+output_dir = global_config["OUTPUT_DIR"] + "/"
+
+
+###############################
+#                             #
+# Rules for Feature Selection #
+#                             #
+###############################
+
+
+rule split_data:
+    input:
+        data = path_data,
+        label = path_label,
+        conf = "workflow/feature_selection/rules/config.yml",
+    output:
+        output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        output_dir + "{group}/preprocessing/split_data/X_test.csv",
+        output_dir + "{group}/preprocessing/split_data/y_test.csv",
+    shell:
+        "python workflow/preprocessing/scripts/split_data.py --path_data {input.data} --path_label {input.label} --config {input.conf} --group {wildcards.group} --output {output}"

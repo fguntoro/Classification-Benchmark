@@ -4,8 +4,9 @@ library(sharp)
 args <- commandArgs(trailingOnly = TRUE)
 path_to_dat <- as.character(args[1])
 path_to_label <- as.character(args[2])
-group <- as.character(args[3])
-path_to_output <- as.character(args[4])
+path_to_indices <- as.character(args[3])
+group <- as.character(args[4])
+path_to_output <- as.character(args[5])
 
 ###
 # 01 Stability analysis LASSO ----------------------------------------------------------
@@ -15,9 +16,9 @@ dir.create(file.path(output_dir), recursive = TRUE)
 
 mydat <- read.csv(path_to_dat, row.names = "X")
 mylabels <- read.csv(path_to_label, row.names = "X")
-
-
-mydat <- subset(mydat, row.names(mydat) %in% row.names(mylabels))
+myindices <- read.csv(path_to_indices)
+mydat <- mydat[myindices$index,]
+print(dim(mydat))
 
 if (ncol(mylabels) == 1) {
   outcome <- mylabels[row.names(mydat),]

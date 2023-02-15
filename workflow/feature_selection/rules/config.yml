@@ -8,7 +8,7 @@ Feature_Selection:
     module: sklearn.feature_selection
     name: VarianceThreshold
     params:
-      threshold: 0.16
+      threshold: 0.01
 
   SelectKBest:
     module: sklearn.feature_selection

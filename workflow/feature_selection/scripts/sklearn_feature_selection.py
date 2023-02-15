@@ -2,12 +2,19 @@ from joblib import dump
 import argparse
 import sys
 import os
-import utils
+
+import numpy as np
+import pandas as pd
+
+import sys
+sys.path.insert(1, 'workflow/support')
 from support import (
     preprocess,
 )
-import numpy as np
-import pandas as pd
+import utility
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler
+
 
 def main(sysargs=sys.argv[1:]):
     print("_______________________________")
@@ -25,6 +32,12 @@ def main(sysargs=sys.argv[1:]):
         dest="path_label",
         help="Path to the label file",
         required=True,
+    )
+    parser.add_argument(
+        "--indices",
+        dest="indices",
+        help="Path to file containing vector of index for training",
+        required=False,
     )
     parser.add_argument(
         "--config",
@@ -57,10 +70,11 @@ def main(sysargs=sys.argv[1:]):
     path_label = args.path_label
     output = args.output
     group = args.group
+    path_indices = args.indices
 
-    config_file = utils.config_reader(args.config)
+    config_file = utility.config_reader(args.config)
 
-    current_module = utils.my_import(
+    current_module = utility.my_import(
         config_file["Feature_Selection"][feature_selection]["module"])
     Feature_Selector = getattr(
         current_module, config_file["Feature_Selection"][feature_selection]["name"])
@@ -68,8 +82,8 @@ def main(sysargs=sys.argv[1:]):
 
     if feature_selection in ["RFE", "RFECV" , "SelectFromModel" , "SequentialFeatureSelectorForward" , "SequentialFeatureSelectorBackward"]:
         estimator_name = config_file["estimator"]
-        models_config_file = utils.config_reader("workflow/prediction/rules/models_config.yml")
-        current_module = utils.my_import(models_config_file["Models"][estimator_name]["module"])
+        models_config_file = utility.config_reader("workflow/prediction/rules/models_config.yml")
+        current_module = utility.my_import(models_config_file["Models"][estimator_name]["module"])
         estimator = getattr(current_module, models_config_file["Models"][estimator_name]["model"])
         estimator = estimator(**models_config_file["Models"][estimator_name]["params"])
         Feature_Selector = Feature_Selector(estimator, **params)        
@@ -78,19 +92,16 @@ def main(sysargs=sys.argv[1:]):
 
     print(Feature_Selector)
 
-    data, labels = preprocess(data=path_data, label=path_label)
+    pipe = Pipeline([('scaler', MinMaxScaler()),
+                 ('selector', Feature_Selector)])
     
-    y = np.ravel(labels[[group]])
-    na_index = np.isnan(y)
-    y = y[~na_index]
-
-    X = data
-    X = X.loc[~na_index, :]
+    X = pd.read_csv(path_data)
+    y = pd.read_csv(path_label)
 
     if feature_selection == "VarianceThreshold":
-        Feature_Selector.fit(X)
+        pipe.fit(X)
     else:
-        Feature_Selector.fit(X,y)
+        pipe.fit(X,y)
 
     results =  X.columns[Feature_Selector.get_support(indices=True)]
     pd.DataFrame({"feature":results}).to_csv(output, index=False)
