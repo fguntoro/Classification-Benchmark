@@ -1,4 +1,3 @@
-from joblib import dump
 import argparse
 import sys
 import os
@@ -31,12 +30,14 @@ def main(sysargs=sys.argv[1:]):
         "--path_label",
         dest="path_label",
         help="Path to the label file",
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "--indices",
         dest="indices",
-        help="Path to file containing vector of index for training",
+        nargs='+',
+        default=[],
+        help="List of files containing vector of feature names to remove",
         required=False,
     )
     parser.add_argument(
@@ -67,7 +68,6 @@ def main(sysargs=sys.argv[1:]):
     args = parser.parse_args()
     feature_selection = args.feature_selection
     path_data = args.path_data
-    path_label = args.path_label
     output = args.output
     group = args.group
     path_indices = args.indices
@@ -81,6 +81,7 @@ def main(sysargs=sys.argv[1:]):
     params = config_file["Feature_Selection"][feature_selection]["params"]
 
     if feature_selection in ["RFE", "RFECV" , "SelectFromModel" , "SequentialFeatureSelectorForward" , "SequentialFeatureSelectorBackward"]:
+        path_label = args.path_label
         estimator_name = config_file["estimator"]
         models_config_file = utility.config_reader("workflow/prediction/rules/models_config.yml")
         current_module = utility.my_import(models_config_file["Models"][estimator_name]["module"])
@@ -96,14 +97,22 @@ def main(sysargs=sys.argv[1:]):
                  ('selector', Feature_Selector)])
     
     X = pd.read_csv(path_data)
-    y = pd.read_csv(path_label)
+
+    for file in path_indices:
+        feature_names_remove = pd.read_csv(file)['feature']
+        X = X.drop(feature_names_remove, axis =1)
 
     if feature_selection == "VarianceThreshold":
         pipe.fit(X)
     else:
+        y = pd.read_csv(path_label)
+        y = np.ravel(y)
         pipe.fit(X,y)
 
-    results =  X.columns[Feature_Selector.get_support(indices=True)]
+    results =  np.delete(X.columns, Feature_Selector.get_support(indices=True))
+    print(X.columns)
+    print(Feature_Selector.get_support(indices=True))
+    print(results)
     pd.DataFrame({"feature":results}).to_csv(output, index=False)
 
 

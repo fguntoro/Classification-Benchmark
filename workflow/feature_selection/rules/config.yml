@@ -1,4 +1,4 @@
-estimator: "LR_elasticnet"
+estimator: "RFC"
 
 Feature_Selection:
   # Methods included in the Scikit-Learn Package

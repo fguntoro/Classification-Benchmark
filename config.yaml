@@ -1,13 +1,13 @@
-PATH_DATA: "../Classification_Benchmark_Data/Kaggle_Hotel_Reservations/data.csv"
-PATH_LABEL: "../Classification_Benchmark_Data/Kaggle_Hotel_Reservations/label.csv"
+PATH_DATA: "../Simulated-Data/Data/madelon_like_X.csv"
+PATH_LABEL: "../Simulated-Data/Data/madelon_like_y.csv"
 
-GROUP: ["binary"]
+GROUP: ["y"]
 
-OUTPUT_DIR: "../Classification_Benchmark_Data/Kaggle_Hotel_Reservations/output"
+OUTPUT_DIR: "../Classification_Benchmark_Data/Madelon_like/output"
 
 MODE: "Classification" # "Classification"/"Regression"
 
-FEATURE_SELECTION: ["VarianceThreshold", "RFE", "stability"]
+FEATURE_SELECTION: ["stability"]
 
 METHODS: ["LR_elasticnet", "RFC"] #, "LR_l1", "LR_l2", "SGDC_l1", "SGDC_l2", , "DT", , "ET",  , "CNB", "SVM_l1", "SVM_l2", "KNN"] #Classification ["LR_l1", "LR_l2", "LR_elasticnet", "SGD_l1", "SGD_l2", "SGD_elasticnet", "DT", "RFC", "ET", "ADB", "GBTC", "GNB", "CNB", "SVM_l1", "SVM_l2", "KNN", "INGOT"]
 #"GNB"

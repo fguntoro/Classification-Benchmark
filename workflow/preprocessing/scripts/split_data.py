@@ -94,9 +94,9 @@ def main(sysargs=sys.argv[1:]):
 
     print("_______________________________")
 
-    pd.DataFrame(X_train).to_csv(output[0], index=False)
-    pd.DataFrame(y_train).to_csv(output[1], index=False)
-    pd.DataFrame(X_test).to_csv(output[2], index=False)
-    pd.DataFrame(y_test).to_csv(output[3], index=False)
+    pd.DataFrame(X_train).to_csv(output[0], index=True)
+    pd.DataFrame(y_train).to_csv(output[1], index=True)
+    pd.DataFrame(X_test).to_csv(output[2], index=True)
+    pd.DataFrame(y_test).to_csv(output[3], index=True)
 
 main()

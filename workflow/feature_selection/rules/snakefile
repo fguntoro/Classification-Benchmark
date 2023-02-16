@@ -17,39 +17,58 @@ output_dir = global_config["OUTPUT_DIR"] + "/"
 rule variance_threshold:
     input:
         data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
-        label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        # label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
         conf = "workflow/feature_selection/rules/config.yml",
     output:
         output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
     shell:
-        "python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection VarianceThreshold"
+        "python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection VarianceThreshold"
+
+rule correlated_features:
+    input:
+        data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        indices = output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
+        conf = "workflow/feature_selection/rules/config.yml",
+    output:
+        output_dir + "{group}/feature_selection/correlated_features/correlated_features_indices.csv",
+    shell:
+        "python workflow/feature_selection/scripts/correlated_features.py --path_data {input.data} --config {input.conf} --indices {input.indices} --group {wildcards.group} --output {output} --correlation_threshold 0.90"
 
 rule consensus_clustering:
     input:
-        data = path_data,
-        label = path_label,
-        X = output_dir + "{group}/preprocessing/split_data/X_train.csv",
-        y = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
         indices = output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
         conf = "workflow/feature_selection/rules/config.yml",
     output:
         output_dir + "{group}/feature_selection/consensus_clustering/consensus_clustering_indices.csv",
     shell:
         "Rscript workflow/feature_selection/scripts/consensus_clustering.R {input.data} {input.label} {input.indices} {wildcards.group} {output}"
-        
+
+def aggregate_base_feature_selection(base_feature_selection):
+    
+    files = list()
+    path = output_dir + "y/feature_selection/{base_feature_selection}/{base_feature_selection}_indices.csv"
+    
+    for base_feature_selection in base_feature_selection:
+        files.append(path.format(base_feature_selection= base_feature_selection))
+    
+    return files
+
+
 rule feature_selection:
     input:
-        data = path_data,
-        label = path_label,
-        train_indices = output_dir + "{group}/preprocessing/split_data/train_indices.csv",
+        data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        indices = aggregate_base_feature_selection(["correlated_features", "variance_threshold"]),
         conf = "workflow/feature_selection/rules/config.yml",
     output:
         output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
     shell:
         """
         if [[ "{wildcards.feature_selection}" == "stability" ]]; then
-            Rscript workflow/feature_selection/scripts/stability_analysis.R {input.data} {input.label} {input.train_indices} {wildcards.group} {output}
+            Rscript workflow/feature_selection/scripts/stability_analysis.R {input.data} {input.label} {input.indices} {wildcards.group} {output}
         else
-            python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --indices {input.train_indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
+            python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
         fi
         """
