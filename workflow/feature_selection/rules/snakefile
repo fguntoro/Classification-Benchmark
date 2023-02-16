@@ -67,7 +67,7 @@ rule feature_selection:
     shell:
         """
         if [[ "{wildcards.feature_selection}" == "stability" ]]; then
-            Rscript workflow/feature_selection/scripts/stability_analysis.R {input.data} {input.label} {input.indices} {wildcards.group} {output}
+            Rscript workflow/feature_selection/scripts/stability_analysis.R --path_data {input.data} --path_label {input.label} --indices {input.indices} --group {wildcards.group} --output {output}
         else
             python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
         fi

@@ -2,12 +2,20 @@ library(sharp)
 library(argparse)
 
 # Loading the arguments
-args <- commandArgs(trailingOnly = TRUE)
-path_to_dat <- as.character(args[1])
-path_to_label <- as.character(args[2])
-path_to_indices <- as.character(args[3])
-group <- as.character(args[4])
-path_to_output <- as.character(args[5])
+parser <- ArgumentParser()
+parser$add_argument("--path_data", help = "Path to data file")
+parser$add_argument("--path_label", help = "Path to label file")
+parser$add_argument("--indices", help = "Path to indices file", nargs='+')
+parser$add_argument("--group", help = "Label group/column for directory")
+parser$add_argument("--output", help = "Filename of output with full directory path")
+
+args <- parser$parse_args()
+
+path_to_dat <- args$path_data
+path_to_label <- args$path_label
+path_to_indices <- args$indices
+group <- args$group
+path_to_output <- args$output
 
 ###
 # 01 Stability analysis LASSO ----------------------------------------------------------
@@ -17,8 +25,12 @@ dir.create(file.path(output_dir), recursive = TRUE)
 
 mydat <- read.csv(path_to_dat, row.names = "X")
 mylabels <- read.csv(path_to_label, row.names = "X")
-myindices <- read.csv(path_to_indices)
-mydat <- mydat[myindices$index,]
+
+for (i in length(path_to_indices)) {
+  feature_to_remove <- read.csv(path_to_indices[i])
+  mydat <- mydat[, !(colnames(mydat) %in% feature_to_remove$feature)]
+}
+
 print(dim(mydat))
 
 if (ncol(mylabels) == 1) {
@@ -26,6 +38,8 @@ if (ncol(mylabels) == 1) {
 } else {
   outcome <- eval(parse(text=paste0("mylabels[row.names(mydat),]$", group)))
 }
+
+head(outcome)
 
 ###
 # Variable selection

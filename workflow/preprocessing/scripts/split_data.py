@@ -57,12 +57,9 @@ def main(sysargs=sys.argv[1:]):
     print("_______________________________")
     data, labels = support.preprocess(data=path_data, label=path_label)
 
-    y = np.ravel(labels[[group]])
-    na_index = np.isnan(y)
-    y = y[~na_index]
+    y = labels[[group]]
 
     X = data
-    X = X.loc[~na_index,:]
 
     print("Data shape: {}".format(X.shape))
     print("Label shape: {}".format(y.shape))
@@ -93,6 +90,7 @@ def main(sysargs=sys.argv[1:]):
     print("Saving data")
 
     print("_______________________________")
+
 
     pd.DataFrame(X_train).to_csv(output[0], index=True)
     pd.DataFrame(y_train).to_csv(output[1], index=True)
