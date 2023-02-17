@@ -17,7 +17,6 @@ output_dir = global_config["OUTPUT_DIR"] + "/"
 rule variance_threshold:
     input:
         data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
-        # label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
         conf = "workflow/feature_selection/rules/config.yml",
     output:
         output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
@@ -66,8 +65,10 @@ rule feature_selection:
         output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
     shell:
         """
-        if [[ "{wildcards.feature_selection}" == "stability" ]]; then
+        if [ "{wildcards.feature_selection}" == "stability" ]; then
             Rscript workflow/feature_selection/scripts/stability_analysis.R --path_data {input.data} --path_label {input.label} --indices {input.indices} --group {wildcards.group} --output {output}
+        elif [ "{wildcards.feature_selection}" == "boruta" ]; then
+            python workflow/feature_selection/scripts/boruta_analysis.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
         else
             python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
         fi
