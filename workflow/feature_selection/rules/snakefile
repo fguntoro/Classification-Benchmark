@@ -19,17 +19,17 @@ rule variance_threshold:
         data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
         conf = "workflow/feature_selection/rules/config.yml",
     output:
-        output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
+        output_dir + "{group}/feature_selection/variance_threshold_indices.csv",
     shell:
         "python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection VarianceThreshold"
 
 rule correlated_features:
     input:
         data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
-        indices = output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
+        indices = output_dir + "{group}/feature_selection/variance_threshold_indices.csv",
         conf = "workflow/feature_selection/rules/config.yml",
     output:
-        output_dir + "{group}/feature_selection/correlated_features/correlated_features_indices.csv",
+        output_dir + "{group}/feature_selection/correlated_features_indices.csv",
     shell:
         "python workflow/feature_selection/scripts/correlated_features.py --path_data {input.data} --config {input.conf} --indices {input.indices} --group {wildcards.group} --output {output} --correlation_threshold 0.90"
 
@@ -37,22 +37,61 @@ rule consensus_clustering:
     input:
         data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
         label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
-        indices = output_dir + "{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
+        indices = output_dir + "{group}/feature_selection/variance_threshold_indices.csv",
         conf = "workflow/feature_selection/rules/config.yml",
     output:
-        output_dir + "{group}/feature_selection/consensus_clustering/consensus_clustering_indices.csv",
+        output_dir + "{group}/feature_selection/consensus_clustering_indices.csv",
     shell:
         "Rscript workflow/feature_selection/scripts/consensus_clustering.R {input.data} {input.label} {input.indices} {wildcards.group} {output}"
 
+
+rule estimator_tuning:
+    input:
+        data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        indices = output_dir + "{group}/feature_selection/variance_threshold_indices.csv",
+        conf = "workflow/feature_selection/rules/config.yml",
+    output:
+        output_dir + "{group}/feature_selection/estimator_tuning/tuned_{estimator}.joblib",
+    shell:
+        "python workflow/feature_selection/scripts/estimator_tuning.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --estimator_name {wildcards.estimator} --output {output}"
+
+
 def aggregate_base_feature_selection(base_feature_selection):
-    
     files = list()
-    path = output_dir + "y/feature_selection/{base_feature_selection}/{base_feature_selection}_indices.csv"
-    
+    path = output_dir + "y/feature_selection/{base_feature_selection}_indices.csv"
     for base_feature_selection in base_feature_selection:
         files.append(path.format(base_feature_selection= base_feature_selection))
-    
     return files
+
+rule stability_analysis:
+    input:
+        data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        indices = aggregate_base_feature_selection(
+            ["correlated_features", "variance_threshold"]),
+        conf = "workflow/feature_selection/rules/config.yml",
+    output:
+        output_dir + \
+            "{group}/feature_selection/stability/stability-{estimator}.csv",
+    shell:
+        "Rscript workflow/feature_selection/scripts/stability_analysis.R --path_data {input.data} --path_label {input.label} --indices {input.indices} --group {wildcards.group} --output {output}"
+
+rule boruta:
+    input:
+        data = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        indices = aggregate_base_feature_selection(
+            ["correlated_features", "variance_threshold"]),
+        conf = "workflow/feature_selection/rules/config.yml",
+        estimator = output_dir + "{group}/feature_selection/estimator_tuning/tuned_{estimator}.joblib",
+    output:
+        output_dir + \
+            "{group}/feature_selection/boruta/boruta-{estimator}.csv",
+    #wildcard_constraints:
+    #    estimator = "RFC|DT|ET"
+    shell:
+        "python workflow/feature_selection/scripts/boruta_analysis.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --estimator {input.estimator}"
 
 
 rule feature_selection:
@@ -61,15 +100,10 @@ rule feature_selection:
         label = output_dir + "{group}/preprocessing/split_data/y_train.csv",
         indices = aggregate_base_feature_selection(["correlated_features", "variance_threshold"]),
         conf = "workflow/feature_selection/rules/config.yml",
+        estimator = output_dir + "{group}/feature_selection/estimator_tuning/tuned_{estimator}.joblib",
     output:
-        output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
+        output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
+    wildcard_constraints:
+        feature_selection = "sklearn_.*"
     shell:
-        """
-        if [ "{wildcards.feature_selection}" == "stability" ]; then
-            Rscript workflow/feature_selection/scripts/stability_analysis.R --path_data {input.data} --path_label {input.label} --indices {input.indices} --group {wildcards.group} --output {output}
-        elif [ "{wildcards.feature_selection}" == "boruta" ]; then
-            python workflow/feature_selection/scripts/boruta_analysis.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
-        else
-            python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection}
-        fi
-        """
+        "python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --path_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection {wildcards.feature_selection} --estimator {input.estimator}"

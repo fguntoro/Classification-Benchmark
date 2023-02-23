@@ -21,7 +21,7 @@ path_to_output <- args$output
 # 01 Stability analysis LASSO ----------------------------------------------------------
 ###
 output_dir <- dirname(path_to_output)
-dir.create(file.path(output_dir), recursive = TRUE)
+#dir.create(file.path(output_dir), recursive = TRUE)
 
 mydat <- read.csv(path_to_dat, row.names = "X")
 mylabels <- read.csv(path_to_label, row.names = "X")
@@ -81,10 +81,11 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
   
     selected <- SelectedVariables(stab)
     p <- sum(selected)
-    all_variables <- data.frame(feature=(names(selprop)[sort.list(selprop, decreasing = TRUE)])[1:p])
-    #data_filtered <- xdata[,all_variables]
+    features <- names(selprop)[sort.list(selprop, decreasing = TRUE)][1:p]
+    features <- gsub("[.]", " ", features)
+    features <- data.frame(feature = features)
 
-    write.csv(all_variables, paste0(output_dir,"/stability.csv"), row.names=F)
+    write.csv(features, path_to_output, row.names = F)
   
   return(stab)
 }

@@ -4,8 +4,10 @@ import time
 import pandas as pd
 from scipy import sparse
 
-data_file = snakemake.input["data"]
-labels_file = snakemake.input["label"]
+data_train_file = snakemake.input["data_train"]
+labels_train_file = snakemake.input["label_train"]
+data_test_file = snakemake.input["data_test"]
+labels_test_file = snakemake.input["label_test"]
 model = snakemake.input["model"]
 method = snakemake.wildcards.method
 method_config_file = snakemake.input["conf"]
@@ -17,9 +19,6 @@ optimization = snakemake.config["OPTIMIZATION"]
 output_evaluation = snakemake.output["evaluation"]
 output_fitted_model = snakemake.output["fitted_model"]
 
-feature_selection = snakemake.config["FEATURE_SELECTION"]
-if feature_selection:
-    feature_file = snakemake.input["features"]
 
 def main():
     from joblib import dump
@@ -36,14 +35,11 @@ def main():
     import utility
     import pandas as pd
 
-    data, labels = preprocess(data=data_file, label=labels_file)
-    features = pd.read_csv(feature_file)["feature"]
+
     #label.set_index(label.columns[0], inplace=True, drop=True)
     config_file = utility.config_reader(method_config_file)
 
-    print("Data file = ", data_file)
     print("Mode = ", mode)
-    print("Label file = ", labels_file)
     print("Method = ", method)
     print("Config file = ", method_config_file)
     print("Optimization = ", optimization)
@@ -53,34 +49,28 @@ def main():
 
     print("Analysing {0}".format(group))
 
-    y = np.ravel(labels[[group]])
-    na_index = np.isnan(y)
-    y = y[~na_index]
+    X_train = pd.read_csv(data_train_file, index_col=0)
+    y_train = pd.read_csv(labels_train_file)[group]
+    X_test = pd.read_csv(data_test_file, index_col=0)
+    y_test = pd.read_csv(labels_test_file)[group]
+    
+    if hasattr(snakemake.input, "features"):
+        feature_file = snakemake.input["features"]
+        feature_selection = snakemake.wildcards.feature_selection
+        estimator = snakemake.wildcards.estimator
+        features = pd.read_csv(feature_file)["feature"]
+        X_train = X_train.loc[:, features]
+        X_test = X_test.loc[:, features]
+    else:
+        feature_selection = "none"
+        estimator = "none"
 
-    X = data
-    X = X.loc[~na_index, features]
-    X = MinMaxScaler().fit_transform(X)
-    X = sparse.csr_matrix(X)
+    
+    X_train = MinMaxScaler().fit_transform(X_train)
+    X_train = sparse.csr_matrix(X_train)
 
-    print("Data shape: {}".format(X.shape))
-    print("Label shape: {}".format(y.shape))
-    print("_______________________________")
-
-    print("Train-Test split")
-    # Make sure that stratified split is disabled for regression models
-
-    if mode == "Classification":
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, **config_file["TrainTestSplit"]
-        )
-
-    if mode == "MIC":
-        dict_train_test_split = config_file["TrainTestSplit"]
-        dict_train_test_split["stratify"] = None
-        print(dict_train_test_split)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, **dict_train_test_split
-        )
+    X_test = MinMaxScaler().fit_transform(X_test)
+    X_test = sparse.csr_matrix(X_test)
 
     print("Train data shape: {}".format(X_train.shape))
     print("Train label shape: {}".format(y_train.shape))
@@ -126,8 +116,11 @@ def main():
 
     result.insert(0, "Method", method)
     result.insert(1, "Parameters", best_parameters)
-    result.insert(3, "Group", group)
-    result.insert(4, "Time", end_time - start_time)
+    result.insert(2, "Group", group)
+    result.insert(3, "Feature_selection", feature_selection)
+    result.insert(4, "Estimator", estimator)
+    result.insert(5, "Time", end_time - start_time)
+
 
     # results = pd.concat([results, result])
     results = results.append(result)

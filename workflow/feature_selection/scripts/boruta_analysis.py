@@ -1,6 +1,6 @@
 import argparse
 import os
-
+from joblib import load
 import numpy as np
 import pandas as pd
 
@@ -62,6 +62,12 @@ def main(sysargs=sys.argv[1:]):
         "--feature_selection",
         dest="feature_selection",
         help="Method selected for feature selection",
+        required=False,
+    )
+    parser.add_argument(
+        "--estimator",
+        dest="estimator",
+        help="Saved joblib of Tuned estimator",
         required=True,
     )
 
@@ -72,6 +78,8 @@ def main(sysargs=sys.argv[1:]):
     output = args.output
     group = args.group
     path_indices = args.indices
+    estimator = load(args.estimator)
+
 
     ## LOAD DATA
     X = pd.read_csv(path_data, index_col=0)
@@ -86,33 +94,6 @@ def main(sysargs=sys.argv[1:]):
 
     config_file = utility.config_reader(args.config)
 
-    # define random forest classifier, with utilising all cores and
-    # sampling in proportion to y labels
-    estimator = RandomForestClassifier(random_state=12345)
-
-    # Define parameter grid
-    param_grid = { 'n_estimators': [100, 300, 500],
-                'class_weight': ['balanced'],
-                'max_features': ['auto', 'sqrt', 'log2'],
-                'max_depth' : [5, 10, 15],
-                'min_samples_split': [0.01, 0.05, 0.10],
-                'min_samples_leaf': [0.01, 0.05, 0.10],
-                'n_jobs': [-1]
-                 }
-
-    # Initialize GridSearch object
-    gscv = GridSearchCV(estimator, param_grid, cv = 5,  n_jobs= -1, verbose = 2, scoring = 'roc_auc')
-
-    # Fit gscv
-    gscv.fit(X, y)
-
-    # Get best parameters and score
-    best_params = gscv.best_params_
-    best_score = gscv.best_score_
-
-    # Update classifier parameters
-    estimator.set_params(**best_params)
-
     # define Boruta feature selection method
     Feature_Selector = BorutaPy(estimator, n_estimators='auto', verbose=2, random_state=12345)
 
@@ -122,7 +103,7 @@ def main(sysargs=sys.argv[1:]):
                  ('selector', Feature_Selector)])
     
     
-    pipe.fit(X,y)
+    pipe.fit(Xval,y)
 
     results =  X.columns[Feature_Selector.support_]
     pd.DataFrame({"feature":results}).to_csv(output, index=False)

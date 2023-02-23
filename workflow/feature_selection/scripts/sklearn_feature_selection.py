@@ -1,15 +1,11 @@
 import argparse
-import sys
-import os
+from joblib import load
 
 import numpy as np
 import pandas as pd
 
 import sys
 sys.path.insert(1, 'workflow/support')
-from support import (
-    preprocess,
-)
 import utility
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
@@ -64,6 +60,12 @@ def main(sysargs=sys.argv[1:]):
         help="Method selected for feature selection",
         required=True,
     )
+    parser.add_argument(
+        "--estimator",
+        dest="estimator",
+        help="Saved joblib of Tuned estimator",
+        required=False,
+    )
 
     args = parser.parse_args()
     feature_selection = args.feature_selection
@@ -80,23 +82,19 @@ def main(sysargs=sys.argv[1:]):
         current_module, config_file["Feature_Selection"][feature_selection]["name"])
     params = config_file["Feature_Selection"][feature_selection]["params"]
 
-    if feature_selection in ["RFE", "RFECV" , "SelectFromModel" , "SequentialFeatureSelectorForward" , "SequentialFeatureSelectorBackward"]:
-        path_label = args.path_label
-        estimator_name = config_file["estimator"]
-        models_config_file = utility.config_reader("workflow/prediction/rules/models_config.yml")
-        current_module = utility.my_import(models_config_file["Models"][estimator_name]["module"])
-        estimator = getattr(current_module, models_config_file["Models"][estimator_name]["model"])
-        estimator = estimator(**models_config_file["Models"][estimator_name]["params"])
-        Feature_Selector = Feature_Selector(estimator, **params)        
-    else:
+    if feature_selection == "VarianceThreshold":
         Feature_Selector = Feature_Selector(**params)
+    elif feature_selection in ["sklearn_RFE", "RFECV" , "SelectFromModel" , "SequentialFeatureSelectorForward" , "SequentialFeatureSelectorBackward"]:
+        path_label = args.path_label
+        estimator = load(args.estimator)
+        Feature_Selector = Feature_Selector(estimator, **params)      
 
     print(Feature_Selector)
 
     pipe = Pipeline([('scaler', MinMaxScaler()),
                  ('selector', Feature_Selector)])
     
-    X = pd.read_csv(path_data)
+    X = pd.read_csv(path_data, index_col=0)
 
     for file in path_indices:
         feature_names_remove = pd.read_csv(file)['feature']
@@ -104,12 +102,13 @@ def main(sysargs=sys.argv[1:]):
 
     if feature_selection == "VarianceThreshold":
         pipe.fit(X)
-    else:
-        y = pd.read_csv(path_label)
+    elif feature_selection in ["sklearn_RFE", "RFECV", "SelectFromModel", "SequentialFeatureSelectorForward", "SequentialFeatureSelectorBackward"]:
+        y = pd.read_csv(path_label, index_col=0)[group]
         y = np.ravel(y)
         pipe.fit(X,y)
-
-    results =  np.delete(X.columns, Feature_Selector.get_support(indices=True))
+    
+    results = np.delete(
+        X.columns, pipe.named_steps['selector'].get_support(indices=True))
     print(X.columns)
     print(Feature_Selector.get_support(indices=True))
     print(results)

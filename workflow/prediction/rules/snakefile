@@ -1,4 +1,7 @@
 import yaml
+import glob
+import os.path
+from itertools import product
 
 configfile: "workflow/prediction/rules/models_config.yml"
 
@@ -9,7 +12,6 @@ with open("config.yaml") as file:
 path_data = global_config["PATH_DATA"] + "/"
 path_label = global_config["PATH_LABEL"] + "/"
 output_dir = global_config["OUTPUT_DIR"] + "/"
-
 
 rule build_model:
     input:
@@ -24,13 +26,16 @@ rule build_model:
 
 rule evaluation_sklearn:
     input:
-        data=path_data,
-        label=path_label,
+        data_train = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + "{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + "{group}/preprocessing/split_data/y_test.csv",
         model=output_dir + "{group}/prediction/models/{method}.joblib",
         conf="workflow/prediction/rules/models_config.yml",
     output:
-        evaluation = output_dir + "{group}/prediction/results/no_feature_selection/{method}.csv",
-        fitted_model = output_dir + "{group}/prediction/results/no_feature_selection/fitted_models/{method}.joblib",
+        evaluation = output_dir + \
+            "{group}/prediction/results/{method}/nofeatureselection.csv",
+        fitted_model = output_dir + "{group}/prediction/results/{method}/nofeatureselection.joblib",
 #    wildcard_constraints:
 #        method = "sklearn_.*"
     conda:
@@ -39,22 +44,34 @@ rule evaluation_sklearn:
     script:
         "../../prediction/scripts/evaluation.py"
 
+
 use rule evaluation_sklearn as evaluate_feature_selection with:
     input:
-        data=path_data,
-        features=output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}.csv",
-        label=path_label,
+        data_train = output_dir + "{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + "{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + "{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + "{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
         model=output_dir + "{group}/prediction/models/{method}.joblib",
         conf="workflow/prediction/rules/models_config.yml",
     output:
-        evaluation = output_dir + "{group}/prediction/results/{feature_selection}/{method}.csv",
-        fitted_model = output_dir + "{group}/prediction/results/{feature_selection}/fitted_models/{method}.joblib",
+        evaluation = output_dir + \
+            "{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
+        fitted_model = output_dir + \
+            "{group}/prediction/results/{method}/{feature_selection}-{estimator}.joblib",
 
 rule aggregate_summary:
     input:
         lambda wildcards: expand(
-            output_dir
-            + "{group}/prediction/results/{method}.csv",
+            output_dir + "{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
+            method=global_config["METHODS"],
+            group=wildcards.group,
+            feature_selection=global_config["FEATURE_SELECTION"],
+            estimator=global_config["ESTIMATOR"],
+            allow_missing=True,
+        ),
+        lambda wildcards: expand(
+            output_dir + "{group}/prediction/results/{method}/nofeatureselection.csv",
             method=global_config["METHODS"],
             group=wildcards.group,
             allow_missing=True,

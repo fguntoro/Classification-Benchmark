@@ -7,11 +7,12 @@ OUTPUT_DIR: "../Classification_Benchmark_Data/Madelon_like/output"
 
 MODE: "Classification" # "Classification"/"Regression"
 
-FEATURE_SELECTION: ["boruta"]
+FEATURE_SELECTION: ["stability","boruta", "sklearn_RFE"]
+ESTIMATOR: ["RFC"]
 
 METHODS: ["LR_elasticnet", "RFC"] #, "LR_l1", "LR_l2", "SGDC_l1", "SGDC_l2", , "DT", , "ET",  , "CNB", "SVM_l1", "SVM_l2", "KNN"] #Classification ["LR_l1", "LR_l2", "LR_elasticnet", "SGD_l1", "SGD_l2", "SGD_elasticnet", "DT", "RFC", "ET", "ADB", "GBTC", "GNB", "CNB", "SVM_l1", "SVM_l2", "KNN", "INGOT"]
 #"GNB"
 
-OPTIMIZATION: "None" # 'GridSearchCV', 'RandomizedSearchCV', 'BayesSearchCV' and "None"
+OPTIMIZATION: "GridSearchCV" # 'GridSearchCV', 'RandomizedSearchCV', 'BayesSearchCV' and "None"
 
 # TODO multiclass

@@ -1,4 +1,97 @@
-estimator: "RFC"
+Estimator:
+
+  LR_l2:
+    module: sklearn.linear_model
+    model: LogisticRegression
+    params:
+      penalty: "l2"
+      n_jobs: -1
+      class_weight: "balanced"
+      solver: "liblinear"
+      max_iter: 10000
+    param_grid:
+      #max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
+      #solver: ["newton-cg", "sag", "lbfgs"]
+      C: np.logspace(-3, 3, base=10, num=3)
+
+  LR_elasticnet:
+    module: sklearn.linear_model
+    model: LogisticRegression
+    params:
+      penalty: "elasticnet"
+      solver: "saga"
+      n_jobs: -1
+      class_weight: "balanced"
+      l1_ratio: 0.5
+    param_grid:
+      #max_iter: np.logspace(2, 4, base=10, num=3, dtype=int)
+      #l1_ratio: [0.25, 0.5, 0.75]
+      C: np.logspace(-3, 3, base=10, num=3)
+
+  SVM_l1:
+    module: sklearn.svm
+    model: LinearSVC
+    params:
+      penalty: "l1"
+      dual: False
+      class_weight: "balanced"
+      max_iter: 10000
+    param_grid:
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
+      loss: ["squared_hinge"]
+      C: np.logspace(-4, 4, base=10, num=5)
+
+  SVM_l2:
+    module: sklearn.svm
+    model: LinearSVC
+    params:
+      penalty: "l2"
+      class_weight: "balanced"
+      max_iter: 10000
+    param_grid:
+      max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
+      loss: ["squared_hinge", "hinge"]
+      C: np.logspace(-4, 4, base=10, num=5)
+
+  RFC:
+    module: sklearn.ensemble
+    model: RandomForestClassifier
+    params:
+      n_jobs: -1
+      class_weight: "balanced"
+    param_grid:
+      n_estimators: [100, 300]
+      max_depth: [5]
+      min_samples_split: [0.01]
+      min_samples_leaf: [0.01]
+      #n_estimators: [100, 300, 500]
+      #max_depth: [5, 10, 15]
+      #min_samples_split: [0.01, 0.05, 0.1]
+      #min_samples_leaf: [0.01, 0.05,0.1]
+
+  DT:
+    module: sklearn.tree
+    model: DecisionTreeClassifier
+    params:
+      class_weight: "balanced"
+      max_features: "auto"
+    param_grid:
+      max_depth: [5, 10, 15, 30]
+      min_samples_split: [2, 5, 10, 15]
+      min_samples_leaf: [1, 2, 5, 10]
+
+  ET:
+    module: sklearn.ensemble
+    model: ExtraTreesClassifier
+    params:
+      n_jobs: -1
+      class_weight: "balanced"
+    param_grid:
+      n_estimators: [100, 300, 500, 1000]
+      max_depth: [5, 10, 15, 30]
+      min_samples_split: [2, 5, 10, 15]
+      min_samples_leaf: [1, 2, 5, 10]
+
 
 Feature_Selection:
   # Methods included in the Scikit-Learn Package
@@ -40,12 +133,13 @@ Feature_Selection:
     params:
       alpha: 0.05
 
-  RFE:
+  sklearn_RFE:
     module: sklearn.feature_selection
     name: RFE
     params:
       n_features_to_select: 0.2
       step: 1
+      verbose: 1
 
   RFECV:
     module: sklearn.feature_selection
