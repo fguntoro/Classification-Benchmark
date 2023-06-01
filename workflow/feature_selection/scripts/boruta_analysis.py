@@ -27,8 +27,8 @@ def main(sysargs=sys.argv[1:]):
         required=True,
     )
     parser.add_argument(
-        "--path_label",
-        dest="path_label",
+        "--file_label",
+        dest="file_label",
         help="Path to the label file",
         required=True,
     )
@@ -74,7 +74,7 @@ def main(sysargs=sys.argv[1:]):
     args = parser.parse_args()
     feature_selection = args.feature_selection
     path_data = args.path_data
-    path_label = args.path_label
+    file_label = args.file_label
     output = args.output
     group = args.group
     path_indices = args.indices
@@ -86,10 +86,14 @@ def main(sysargs=sys.argv[1:]):
 
     for file in path_indices:
         feature_names_remove = pd.read_csv(file)['feature']
-        X = X.drop(feature_names_remove, axis =1)
+        
+        # Drop the features from DataFrame X if they exist
+        existing_features = set(X.columns)
+        features_to_drop = list(filter(lambda f: f in existing_features, feature_names_remove))
+        X = X.drop(features_to_drop, axis =1)
 
     Xval = X.values
-    y = pd.read_csv(path_label, index_col=0)
+    y = pd.read_csv(file_label, index_col=0)
     y = np.ravel(y)
 
     config_file = utility.config_reader(args.config)

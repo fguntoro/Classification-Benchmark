@@ -4,7 +4,7 @@ library(argparse)
 # Loading the arguments
 parser <- ArgumentParser()
 parser$add_argument("--path_data", help = "Path to data file")
-parser$add_argument("--path_label", help = "Path to label file")
+parser$add_argument("--file_label", help = "Path to label file")
 parser$add_argument("--indices", help = "Path to indices file", nargs='+')
 parser$add_argument("--group", help = "Label group/column for directory")
 parser$add_argument("--output", help = "Filename of output with full directory path")
@@ -12,7 +12,7 @@ parser$add_argument("--output", help = "Filename of output with full directory p
 args <- parser$parse_args()
 
 path_to_dat <- args$path_data
-path_to_label <- args$path_label
+path_to_label <- args$file_label
 path_to_indices <- args$indices
 group <- args$group
 path_to_output <- args$output

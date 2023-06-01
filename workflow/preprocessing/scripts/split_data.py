@@ -20,8 +20,8 @@ def main(sysargs=sys.argv[1:]):
         required=True,
     )
     parser.add_argument(
-        "--path_label",
-        dest="path_label",
+        "--file_label",
+        dest="file_label",
         help="Path to the label file",
         required=True,
     )
@@ -48,14 +48,14 @@ def main(sysargs=sys.argv[1:]):
     
     args = parser.parse_args()
     path_data = args.path_data
-    path_label = args.path_label
+    file_label = args.file_label
     group = args.group
     output = args.output
 
     print("Data file = ", path_data)
-    print("Label file = ", path_label)
+    print("Label file = ", file_label)
     print("_______________________________")
-    data, labels = support.preprocess(data=path_data, label=path_label)
+    data, labels = support.preprocess(data=path_data, label=file_label)
 
     y = labels[[group]]
 

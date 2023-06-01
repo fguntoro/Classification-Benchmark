@@ -23,8 +23,8 @@ def main(sysargs=sys.argv[1:]):
         required=True,
     )
     parser.add_argument(
-        "--path_label",
-        dest="path_label",
+        "--file_label",
+        dest="file_label",
         help="Path to the label file",
         required=False,
     )
@@ -85,7 +85,7 @@ def main(sysargs=sys.argv[1:]):
     if feature_selection == "VarianceThreshold":
         Feature_Selector = Feature_Selector(**params)
     elif feature_selection in ["sklearn_RFE", "RFECV" , "SelectFromModel" , "SequentialFeatureSelectorForward" , "SequentialFeatureSelectorBackward"]:
-        path_label = args.path_label
+        file_label = args.file_label
         estimator = load(args.estimator)
         Feature_Selector = Feature_Selector(estimator, **params)      
 
@@ -98,12 +98,15 @@ def main(sysargs=sys.argv[1:]):
 
     for file in path_indices:
         feature_names_remove = pd.read_csv(file)['feature']
-        X = X.drop(feature_names_remove, axis =1)
+        # Drop the features from DataFrame X if they exist
+        existing_features = set(X.columns)
+        features_to_drop = list(filter(lambda f: f in existing_features, feature_names_remove))
+        X = X.drop(features_to_drop, axis =1)
 
     if feature_selection == "VarianceThreshold":
         pipe.fit(X)
     elif feature_selection in ["sklearn_RFE", "RFECV", "SelectFromModel", "SequentialFeatureSelectorForward", "SequentialFeatureSelectorBackward"]:
-        y = pd.read_csv(path_label, index_col=0)[group]
+        y = pd.read_csv(file_label, index_col=0)[group]
         y = np.ravel(y)
         pipe.fit(X,y)
     

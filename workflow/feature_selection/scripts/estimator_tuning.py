@@ -26,8 +26,8 @@ def main(sysargs=sys.argv[1:]):
         required=True,
     )
     parser.add_argument(
-        "--path_label",
-        dest="path_label",
+        "--file_label",
+        dest="file_label",
         help="Path to the label file",
         required=True,
     )
@@ -66,7 +66,7 @@ def main(sysargs=sys.argv[1:]):
 
     args = parser.parse_args()
     path_data = args.path_data
-    path_label = args.path_label
+    file_label = args.file_label
     group = args.group
     estimator_name = args.estimator_name
     output = args.output
@@ -74,12 +74,17 @@ def main(sysargs=sys.argv[1:]):
 
 
     ### Load Data
-    X = pd.read_csv(path_data)
+    X = pd.read_csv(path_data, index_col=0)
 
     for file in path_indices:
         feature_names_remove = pd.read_csv(file)['feature']
-        X = X.drop(feature_names_remove, axis =1)
-    y = pd.read_csv(path_label)
+
+        # Drop the features from DataFrame X if they exist
+        existing_features = set(X.columns)
+        features_to_drop = list(filter(lambda f: f in existing_features, feature_names_remove))
+        X = X.drop(features_to_drop, axis =1)
+
+    y = pd.read_csv(file_label)
     y = np.ravel(y[group])
 
     ### Load Estimator for tuning from config

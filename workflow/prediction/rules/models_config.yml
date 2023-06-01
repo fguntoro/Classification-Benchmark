@@ -76,8 +76,8 @@ Models:
       class_weight: "balanced"
       l1_ratio: 0.5
     cv:
-      max_iter: np.logspace(2, 4, base=10, num=3, dtype=int)
-      l1_ratio: [0.25, 0.5, 0.75]
+      #max_iter: np.logspace(2, 4, base=10, num=3, dtype=int)
+      #l1_ratio: [0.25, 0.5, 0.75]
       C: np.logspace(-2, 2, base=10, num=5)
 
   SVM_l1:

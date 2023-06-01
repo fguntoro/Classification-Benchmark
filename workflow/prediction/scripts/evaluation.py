@@ -13,7 +13,6 @@ method = snakemake.wildcards.method
 method_config_file = snakemake.input["conf"]
 group = snakemake.wildcards.group
 
-mode = snakemake.config["MODE"]
 optimization = snakemake.config["OPTIMIZATION"]
 
 output_evaluation = snakemake.output["evaluation"]
@@ -34,16 +33,14 @@ def main():
     )
     import utility
     import pandas as pd
+    import shap
+    import matplotlib.pyplot as plt
 
 
     #label.set_index(label.columns[0], inplace=True, drop=True)
     config_file = utility.config_reader(method_config_file)
 
-    print("Mode = ", mode)
-    print("Method = ", method)
-    print("Config file = ", method_config_file)
-    print("Optimization = ", optimization)
-    print("_______________________________")
+
 
     results = pd.DataFrame()
 
@@ -53,24 +50,46 @@ def main():
     y_train = pd.read_csv(labels_train_file)[group]
     X_test = pd.read_csv(data_test_file, index_col=0)
     y_test = pd.read_csv(labels_test_file)[group]
+
+
+    if all(isinstance(item, str) for item in y_train):
+        mode = "Classification"
+        
     
+    elif all(isinstance(item, int) for item in y_train):
+        mode = "Regression"
+
+
+    print("Mode = ", mode)
+    print("Method = ", method)
+    print("Config file = ", method_config_file)
+    print("Optimization = ", optimization)
+    print("_______________________________")
+
     if hasattr(snakemake.input, "features"):
         feature_file = snakemake.input["features"]
-        feature_selection = snakemake.wildcards.feature_selection
-        estimator = snakemake.wildcards.estimator
         features = pd.read_csv(feature_file)["feature"]
         X_train = X_train.loc[:, features]
         X_test = X_test.loc[:, features]
+
+        try:
+            feature_selection = snakemake.wildcards.feature_selection
+            estimator = snakemake.wildcards.estimator
+        except AttributeError:
+            feature_selection = "stability"
+            estimator = "none"
+        
     else:
         feature_selection = "none"
         estimator = "none"
 
     
-    X_train = MinMaxScaler().fit_transform(X_train)
-    X_train = sparse.csr_matrix(X_train)
+    #X_train = MinMaxScaler().fit_transform(X_train)
+    #X_train = sparse.csr_matrix(X_train)
 
-    X_test = MinMaxScaler().fit_transform(X_test)
-    X_test = sparse.csr_matrix(X_test)
+    n_features = len(X_test.columns)
+    #X_test = MinMaxScaler().fit_transform(X_test)
+    #X_test = sparse.csr_matrix(X_test)
 
     print("Train data shape: {}".format(X_train.shape))
     print("Train label shape: {}".format(y_train.shape))
@@ -101,11 +120,49 @@ def main():
 
     print("Evaluating")
 
+
+    if mode == "Classification":
+        best_model = clf.best_estimator_.fit(X_train, y_train)
+        explainer = shap.Explainer(best_model, X_train)
+        shap_test = explainer(X_test)
+
+        if method == "RFC":
+            filename = output_evaluation
+
+            filename_shap_bar = filename.replace(".csv", "_shap_bar.png")
+            shap.plots.bar(shap_test[:, :, 1], show=False)
+            print("Saving SHAP plot")
+            plt.savefig(filename_shap_bar)
+
+            filename_shap_summary = filename.replace(".csv", "_shap_summary.png")
+            shap.summary_plot(shap_test[:, :, 1], show=False)
+            plt.savefig(filename_shap_summary)
+
+            filename_shap_heatmap = filename.replace(".csv", "_shap_heatmap.png")
+            shap.plots.heatmap(shap_test[:, :, 1], show=False)
+            plt.savefig(filename_shap_heatmap)
+
+        if method == "LR_elasticnet":
+            filename = output_evaluation
+
+            filename_shap_bar = filename.replace(".csv", "_shap_bar.png")
+            shap.plots.bar(shap_test, show=False)
+            print("Saving SHAP plot")
+            plt.savefig(filename_shap_bar)
+
+            filename_shap_summary = filename.replace(".csv", "_shap_summary.png")
+            shap.summary_plot(shap_test, show=False)
+            plt.savefig(filename_shap_summary)
+
+            filename_shap_heatmap = filename.replace(".csv", "_shap_heatmap.png")
+            shap.plots.heatmap(shap_test, show=False)
+            plt.savefig(filename_shap_heatmap)
+
     if mode == "Classification":
         output_evaluation.split("csv")
         result = evaluate_classifier(y_test, y_pred)
 
-    if mode == "MIC":
+    if mode == "Regression":
         result = evaluate_regression(y_test, y_pred)
         output_file_regression_test_values = (
             output_evaluation.rsplit(".")[0] + "_regression_test_values.csv"
@@ -119,6 +176,7 @@ def main():
     result.insert(2, "Group", group)
     result.insert(3, "Feature_selection", feature_selection)
     result.insert(4, "Estimator", estimator)
+    result.insert(6, "N_feature", n_features)
     result.insert(5, "Time", end_time - start_time)
 
 

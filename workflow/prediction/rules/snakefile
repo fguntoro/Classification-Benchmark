@@ -9,35 +9,41 @@ configfile: "workflow/prediction/rules/models_config.yml"
 with open("config.yaml") as file:
     global_config = yaml.load(file, yaml.FullLoader)
 
-path_data = global_config["PATH_DATA"] + "/"
-path_label = global_config["PATH_LABEL"] + "/"
+input_dir = global_config["INPUT_DIR"] + "/"
+file_label = global_config["FILE_LABEL"] + "/"
 output_dir = global_config["OUTPUT_DIR"] + "/"
+
+
 
 rule build_model:
     input:
-        conf="workflow/prediction/rules/models_config.yml",
+        conf = "workflow/prediction/rules/models_config.yml",
     output:
-        output_dir + "{group}/prediction/models/{method}.joblib",
+        output_dir + "{data}/{group}/prediction/models/{method}.joblib",
     conda:
         "../../prediction/envs/env.yml"
     shell:
         "python workflow/prediction/scripts/build_model.py --config {input.conf} --model-name {wildcards.method} --outfile {output}"
 
 
-rule evaluation_sklearn:
+rule evaluation:
     input:
-        data_train = output_dir + "{group}/preprocessing/split_data/X_train.csv",
-        label_train = output_dir + "{group}/preprocessing/split_data/y_train.csv",
-        data_test = output_dir + "{group}/preprocessing/split_data/X_test.csv",
-        label_test = output_dir + "{group}/preprocessing/split_data/y_test.csv",
-        model=output_dir + "{group}/prediction/models/{method}.joblib",
-        conf="workflow/prediction/rules/models_config.yml",
+        data_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + \
+            "{data}/{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_test.csv",
+        model = output_dir + \
+            "{data}/{group}/prediction/models/{method}.joblib",
+        conf = "workflow/prediction/rules/models_config.yml",
     output:
         evaluation = output_dir + \
-            "{group}/prediction/results/{method}/nofeatureselection.csv",
-        fitted_model = output_dir + "{group}/prediction/results/{method}/nofeatureselection.joblib",
-#    wildcard_constraints:
-#        method = "sklearn_.*"
+            "{data}/{group}/prediction/results/{method}/nofeatureselection.csv",
+        fitted_model = output_dir + \
+            "{data}/{group}/prediction/results/{method}/nofeatureselection.joblib",
     conda:
         "../../prediction/envs/env.yml"
     threads: 8
@@ -45,40 +51,128 @@ rule evaluation_sklearn:
         "../../prediction/scripts/evaluation.py"
 
 
-use rule evaluation_sklearn as evaluate_feature_selection with:
+use rule evaluation as evaluate_feature_selection with:
     input:
-        data_train = output_dir + "{group}/preprocessing/split_data/X_train.csv",
-        label_train = output_dir + "{group}/preprocessing/split_data/y_train.csv",
-        data_test = output_dir + "{group}/preprocessing/split_data/X_test.csv",
-        label_test = output_dir + "{group}/preprocessing/split_data/y_test.csv",
-        features = output_dir + "{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
-        model=output_dir + "{group}/prediction/models/{method}.joblib",
-        conf="workflow/prediction/rules/models_config.yml",
+        data_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + \
+            "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
+        model = output_dir + \
+            "{data}/{group}/prediction/models/{method}.joblib",
+        conf = "workflow/prediction/rules/models_config.yml",
+    wildcard_constraints:
+        feature_selection = "sklearn_.*"
     output:
         evaluation = output_dir + \
-            "{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
+            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
         fitted_model = output_dir + \
-            "{group}/prediction/results/{method}/{feature_selection}-{estimator}.joblib",
+            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.joblib",
+
+use rule evaluation as evaluate_boruta with:
+    input:
+        data_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + \
+            "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
+        model = output_dir + "{data}/{group}/prediction/models/{method}.joblib",
+        conf = "workflow/prediction/rules/models_config.yml",
+    wildcard_constraints:
+        feature_selection = "boruta"
+    output:
+        evaluation = output_dir + \
+            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
+        fitted_model = output_dir + \
+            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.joblib",
+
+
+use rule evaluation as evaluate_stability with:
+    input:
+        data_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + \
+            "{data}/{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + \
+            "{data}/{group}/feature_selection/stability/stability.csv",
+        model = output_dir + "{data}/{group}/prediction/models/{method}.joblib",
+        conf = "workflow/prediction/rules/models_config.yml",
+    output:
+        evaluation = output_dir + \
+            "{data}/{group}/prediction/results/{method}/stability.csv",
+        fitted_model = output_dir + \
+            "{data}/{group}/prediction/results/{method}/stability.joblib",
+
+
+def aggregate_feature_selection(datas, groups, methods, feature_selections, estimators):
+    files = list()
+    for data in datas:
+        for group in groups:
+            for method in methods:
+                for feature_selection in feature_selections:
+                    if feature_selection == "stability":
+                        path = output_dir + \
+                            "{data}/{group}/prediction/results/{method}/{feature_selection}.csv"
+                        files.append(path.format(
+                            data=data,
+                            group=group,
+                            method=method,
+                            feature_selection=feature_selection))
+                    elif feature_selection == "boruta":
+                        path = output_dir + \
+                            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv"
+                        for estimator in estimators:
+                            if estimator in ["DT", "RFC", "ET"]:
+                                files.append(path.format(
+                                    data=data,
+                                    group=group,
+                                    method=method,
+                                    feature_selection=feature_selection,
+                                    estimator=estimator))
+                    else:
+                        path = output_dir + \
+                            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv"
+                        for estimator in estimators:
+                            files.append(path.format(
+                                data=data,
+                                group=group,
+                                method=method,
+                                feature_selection=feature_selection,
+                                estimator=estimator))
+    return files
+
 
 rule aggregate_summary:
     input:
         lambda wildcards: expand(
-            output_dir + "{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
+            output_dir +
+            "{data}/{group}/prediction/results/{method}/nofeatureselection.csv",
             method=global_config["METHODS"],
+            data=wildcards.data,
             group=wildcards.group,
-            feature_selection=global_config["FEATURE_SELECTION"],
-            estimator=global_config["ESTIMATOR"],
             allow_missing=True,
         ),
-        lambda wildcards: expand(
-            output_dir + "{group}/prediction/results/{method}/nofeatureselection.csv",
-            method=global_config["METHODS"],
-            group=wildcards.group,
-            allow_missing=True,
+        aggregate_feature_selection(
+            datas=global_config["FILE_DATA"],
+            groups=global_config["GROUP"],
+            methods=global_config["METHODS"],
+            feature_selections=global_config["FEATURE_SELECTION"],
+            estimators=global_config["ESTIMATOR"],
         ),
     params:
-        config=config,
+        config = config,
     output:
-        output_dir + "{group}/prediction/summary.csv",
+        output_dir + "{data}/{group}/prediction/summary.csv",
     script:
         "../../prediction/scripts/aggregate.py"

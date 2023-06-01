@@ -65,16 +65,19 @@ def model_fitting(
             fp=make_scorer(utility.fp),
             fn=make_scorer(utility.fn),
             balanced_accuracy=make_scorer(balanced_accuracy_score),
-            f1score=make_scorer(f1_score),
-            roc_auc=make_scorer(roc_auc_score),
+            #f1score=make_scorer(f1_score),
+            #roc_auc=make_scorer(roc_auc_score),
         )
+        refit_metric="balanced_accuracy"
 
-    if mode == "MIC":
+    if mode == "Regression":
         scoring = dict(
             mean_squared_error="neg_mean_squared_error",
             mean_squared_log_error ="neg_mean_squared_log_error",
             r2_score="r2",
         )
+        refit_metric = "mean_squared_error"
+
 
     if optimization != "None":
         print("Hyper-parameter Tuning")
@@ -104,7 +107,7 @@ def model_fitting(
                 param_grid=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
-                refit="balanced_accuracy",
+                refit=refit_metric,
                 #refit=utility.refit_strategy,
                 **config_file["CrossValidation"]
             )
@@ -115,7 +118,7 @@ def model_fitting(
                 param_distributions=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
-                refit="balanced_accuracy",
+                refit=refit_metric,
                 #refit= utility.refit_strategy,
                 **config_file["CrossValidation"]
             )
@@ -123,10 +126,10 @@ def model_fitting(
         grid.fit(X_train, y_train)
         print("Best params: {}".format(grid.best_params_))
 
-        filename = model_joblib
-        filename = filename.replace(".joblib", "_grid.joblib")
-        print("Saving grid model to {0}".format(filename))
-        dump(grid, filename)
+        # filename = model_joblib
+        # filename = filename.replace(".joblib", "_grid.joblib")
+        # print("Saving grid model to {0}".format(filename))
+        # dump(grid.best_estimator_, filename)
 
         filename = output_file
         filename = filename.replace(".csv", "_cv.csv")
@@ -156,8 +159,8 @@ def evaluate_classifier(y_test, y_pred):
 
     accuracy = accuracy_score(y_test, y_pred)
     balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
-    f1score = f1_score(y_test, y_pred)
-    roc_auc = roc_auc_score(y_test, y_pred)
+    #f1score = f1_score(y_test, y_pred, pos_label="yes")
+    #roc_auc = roc_auc_score(y_test, y_pred)
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
@@ -165,8 +168,8 @@ def evaluate_classifier(y_test, y_pred):
     result = dict(
         accuracy=accuracy,
         balanced_accuracy=balanced_accuracy,
-        f1_score=f1score,
-        roc_auc=roc_auc,
+        #f1_score=f1score,
+        #roc_auc=roc_auc,
         tp=tp,
         tn=tn,
         fp=fp,

@@ -1,18 +1,22 @@
-PATH_DATA: "../Simulated-Data/Data/madelon_like_X.csv"
-PATH_LABEL: "../Simulated-Data/Data/madelon_like_y.csv"
 
-GROUP: ["y"]
+INPUT_DIR: "../Simulated-Data/Data"
+
+FILE_DATA: ["madelon_like_X","madelon_like_X1"]
+FILE_LABEL: "../Simulated-Data/Data/madelon_like_y.csv"
+
+GROUP: ["int", "str"]
 
 OUTPUT_DIR: "../Classification_Benchmark_Data/Madelon_like/output"
 
 MODE: "Classification" # "Classification"/"Regression"
 
 FEATURE_SELECTION: ["stability","boruta", "sklearn_RFE"]
-ESTIMATOR: ["RFC"]
+ESTIMATOR: ["RFC", "LR_l2"]
 
 METHODS: ["LR_elasticnet", "RFC"] #, "LR_l1", "LR_l2", "SGDC_l1", "SGDC_l2", , "DT", , "ET",  , "CNB", "SVM_l1", "SVM_l2", "KNN"] #Classification ["LR_l1", "LR_l2", "LR_elasticnet", "SGD_l1", "SGD_l2", "SGD_elasticnet", "DT", "RFC", "ET", "ADB", "GBTC", "GNB", "CNB", "SVM_l1", "SVM_l2", "KNN", "INGOT"]
 #"GNB"
 
 OPTIMIZATION: "GridSearchCV" # 'GridSearchCV', 'RandomizedSearchCV', 'BayesSearchCV' and "None"
 
+SEED: 1234
 # TODO multiclass

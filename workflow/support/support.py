@@ -68,13 +68,14 @@ def model_fitting(
             f1score=make_scorer(f1_score),
             roc_auc=make_scorer(roc_auc_score),
         )
-
-    if mode == "MIC":
+        refit_metric = "balanced_accuracy"
+    elif mode == "Regression":
         scoring = dict(
             mean_squared_error="neg_mean_squared_error",
             mean_squared_log_error ="neg_mean_squared_log_error",
             r2_score="r2",
         )
+        refit_metric = "neg_mean_squared_error"
 
     if optimization != "None":
         print("Hyper-parameter Tuning")
@@ -98,13 +99,16 @@ def model_fitting(
         for i in config_file["CrossValidation"].items():
             print("{}: {}".format(i[0], i[1]))
 
+        print(mode)
+        print(refit_metric)
+
         if optimization == "GridSearchCV":
             grid = GridSearchCV(
                 estimator=model,
                 param_grid=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
-                refit="balanced_accuracy",
+                refit=refit_metric,
                 #refit=utility.refit_strategy,
                 **config_file["CrossValidation"]
             )
@@ -115,7 +119,7 @@ def model_fitting(
                 param_distributions=param_grid,
                 scoring=scoring,
                 cv=CVFolds(config_file),
-                refit="balanced_accuracy",
+                refit=refit_metric,
                 #refit= utility.refit_strategy,
                 **config_file["CrossValidation"]
             )
