@@ -19,6 +19,22 @@ output_evaluation = snakemake.output["evaluation"]
 output_fitted_model = snakemake.output["fitted_model"]
 
 
+def get_mode(y_train):
+    if all(isinstance(item, str) for item in y_train):
+        unique_values = set(y_train)
+        if len(unique_values) == 2:
+            return "Classification", True
+        else:
+            return "Classification", False
+        
+    elif all(isinstance(item, int) for item in y_train):
+        if all(item == 0 or item == 1 for item in y_train):
+            return "Classification", True
+        else:
+            return "Regression", False
+
+        
+
 def main():
     from joblib import dump
     from sklearn.preprocessing import MinMaxScaler
@@ -52,13 +68,7 @@ def main():
     y_test = pd.read_csv(labels_test_file)[group]
 
 
-    if all(isinstance(item, str) for item in y_train):
-        mode = "Classification"
-        
-    
-    elif all(isinstance(item, int) for item in y_train):
-        mode = "Regression"
-
+    mode, ifBinary = get_mode(y_train)
 
     print("Mode = ", mode)
     print("Method = ", method)
@@ -162,7 +172,7 @@ def main():
         output_evaluation.split("csv")
         result = evaluate_classifier(y_test, y_pred)
 
-    if mode == "Regression":
+    elif mode == "Regression":
         result = evaluate_regression(y_test, y_pred)
         output_file_regression_test_values = (
             output_evaluation.rsplit(".")[0] + "_regression_test_values.csv"
