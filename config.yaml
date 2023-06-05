@@ -1,14 +1,14 @@
 
 INPUT_DIR: "../Simulated-Data/Data"
 
-FILE_DATA: ["madelon_like_X","madelon_like_X1"]
-FILE_LABEL: "../Simulated-Data/Data/madelon_like_y.csv"
+FILE_DATA: ["sysmex_X","sysmex_X_denoised"]
+FILE_LABEL: "../Simulated-Data/Data/sysmex_y.csv"
 
-GROUP: ["int", "str"]
+GROUP: ["Asthma","EosinophilSerumCount"] # "all"
 
-OUTPUT_DIR: "../Classification_Benchmark_Data/Madelon_like/output"
+OUTPUT_DIR: "../Classification_Benchmark_Data/Sysmex"
 
-MODE: "Classification" # "Classification"/"Regression"
+# MODE: "Classification" # "Classification"/"Regression"
 
 FEATURE_SELECTION: ["stability","boruta", "sklearn_RFE"]
 ESTIMATOR: ["RFC", "LR_l2"]

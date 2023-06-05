@@ -32,6 +32,11 @@ def main(sysargs=sys.argv[1:]):
 
     config_file = utility.config_reader(args.config)
 
+    if model == "LR_elasticnet":
+        current_module = utility.my_import(config_file["Models"][model]["module"])
+        dClassifier = getattr(current_module, config_file["Models"][model]["model"])
+        dClassifier = dClassifier(**config_file["Models"][model]["params"])
+
     current_module = utility.my_import(config_file["Models"][model]["module"])
     dClassifier = getattr(current_module, config_file["Models"][model]["model"])
     dClassifier = dClassifier(**config_file["Models"][model]["params"])
