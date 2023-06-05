@@ -238,7 +238,7 @@ Models:
     module: sklearn.linear_model
     model: LinearRegression
     params:
-      normalize: False
+      fit_intercept: True
 
   LinR_l1:
     module: sklearn.linear_model

@@ -8,11 +8,14 @@ file_label = global_config["FILE_LABEL"] + "/"
 output_dir = global_config["OUTPUT_DIR"] + "/"
 
 
-
+print(input_dir)
+print(file_label)
+print(output_dir)
 
 rule split_data:
     input:
-        data = input_dir + "{data}.csv",
+        #data = input_dir + "{data}.csv",
+        data = "../Simulated-Data/Data/sysmex_X.csv",
         label = file_label,
         conf = "workflow/feature_selection/rules/config.yml",
     output:

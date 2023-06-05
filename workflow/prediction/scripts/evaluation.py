@@ -9,7 +9,7 @@ labels_train_file = snakemake.input["label_train"]
 data_test_file = snakemake.input["data_test"]
 labels_test_file = snakemake.input["label_test"]
 model = snakemake.input["model"]
-method = snakemake.wildcards.method
+modelname = snakemake.wildcards.model
 method_config_file = snakemake.input["conf"]
 group = snakemake.wildcards.group
 
@@ -32,8 +32,6 @@ def get_mode(y_train):
             return "Classification", True
         else:
             return "Regression", False
-
-        
 
 def main():
     from joblib import dump
@@ -68,10 +66,10 @@ def main():
     y_test = pd.read_csv(labels_test_file)[group]
 
 
-    mode, ifBinary = get_mode(y_train)
+    mode, isBinary = get_mode(y_train)
 
     print("Mode = ", mode)
-    print("Method = ", method)
+    print("Model = ", model)
     print("Config file = ", method_config_file)
     print("Optimization = ", optimization)
     print("_______________________________")
@@ -114,7 +112,7 @@ def main():
         X_train,
         y_train,
         mode,
-        method,
+        modelname,
         model,
         optimization,
         config_file,
@@ -136,7 +134,7 @@ def main():
         explainer = shap.Explainer(best_model, X_train)
         shap_test = explainer(X_test)
 
-        if method == "RFC":
+        if modelname == "RFC":
             filename = output_evaluation
 
             filename_shap_bar = filename.replace(".csv", "_shap_bar.png")
@@ -152,7 +150,7 @@ def main():
             shap.plots.heatmap(shap_test[:, :, 1], show=False)
             plt.savefig(filename_shap_heatmap)
 
-        if method == "LR_elasticnet":
+        if modelname == "LR_elasticnet":
             filename = output_evaluation
 
             filename_shap_bar = filename.replace(".csv", "_shap_bar.png")
@@ -181,7 +179,7 @@ def main():
         save_regression_test_values(
             y_test, y_pred, output_file_regression_test_values)
 
-    result.insert(0, "Method", method)
+    result.insert(0, "Method", modelname)
     result.insert(1, "Parameters", best_parameters)
     result.insert(2, "Group", group)
     result.insert(3, "Feature_selection", feature_selection)
