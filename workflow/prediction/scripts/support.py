@@ -37,7 +37,7 @@ def model_fitting(
     X_train,
     y_train,
     mode,
-    method,
+    modelname,
     model_joblib,
     optimization,
     config_file,
@@ -55,7 +55,7 @@ def model_fitting(
 
     print("Loading ", model_joblib)
     model = load(model_joblib)
-    modelname = method
+    modelname = modelname
 
     if mode == "Classification":
         scoring = dict(
