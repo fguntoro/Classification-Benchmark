@@ -73,7 +73,7 @@ def model_fitting(
     if mode == "Regression":
         scoring = dict(
             mean_squared_error="neg_mean_squared_error",
-            mean_squared_log_error ="neg_mean_squared_log_error",
+            # mean_squared_log_error ="neg_mean_squared_log_error",
             r2_score="r2",
         )
         refit_metric = "mean_squared_error"
@@ -191,10 +191,10 @@ def evaluate_regression(y_test, y_pred):
     from sklearn.metrics import mean_squared_error, mean_squared_log_error, r2_score
 
     mse = mean_squared_error(y_test, y_pred)
-    msle = mean_squared_log_error(y_test, y_pred)
+    #msle = mean_squared_log_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
-    result = dict(mean_squared_error=mse, mean_squared_log_error=msle, r2_score=r2)
+    result = dict(mean_squared_error=mse, r2_score=r2)
     result = pd.DataFrame([result])
 
     return result

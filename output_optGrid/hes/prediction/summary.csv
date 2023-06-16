@@ -1,2 +1,0 @@
-Method,Parameters,accuracy,Group,Time,balanced_accuracy,f1_score,roc_auc,tp,tn,fp,fn,sensitivity,specificity
-LR_elasticnet,"{'C': 0.01, 'l1_ratio': 0.25, 'max_iter': 100.0}",0.5729657027572294,hes,12.055654048919678,0.5232678750010331,0.2111801242236024,0.5232678750010331,85,767,534,101,0.4569892473118279,0.5895465026902382

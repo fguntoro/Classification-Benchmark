@@ -25,13 +25,11 @@ def get_groups(config):
 # One to rule them all #
 ########################
 
-print(config["FILE_DATA"])
-
 rule all:
     input:
         expand(
             #config["OUTPUT_DIR"] + "/{group}/feature_selection/estimator_tuning/tuned_RFC.joblib",
-            config["OUTPUT_DIR"] + "/{data}/{group}/prediction/summary.csv",
+            config["OUTPUT_DIR"] + "/summary.csv",
             #config["OUTPUT_DIR"] + "/{group}/feature_selection/{feature_selection}/{feature_selection}_RFC.csv",
             #config["OUTPUT_DIR"] + "/{group}/feature_selection/variance_threshold/variance_threshold_indices.csv",
             #config["OUTPUT_DIR"] + "/{group}/feature_selection/correlated_features/correlated_features_indices.csv",
@@ -41,8 +39,8 @@ rule all:
             #config["OUTPUT_DIR"] + \
             #"/{data}/{group}/prediction/results/{method}/LR_l1-nofeatureselection/summary.csv",
 
-            data=config["FILE_DATA"],
-            group=get_groups(config),
+            #data=config["FILE_DATA"],
+            #group=get_groups(config),
             #method=config["METHODS"],
             #feature_selection=config["FEATURE_SELECTION"]
         )

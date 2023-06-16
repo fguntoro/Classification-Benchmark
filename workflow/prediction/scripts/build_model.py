@@ -28,29 +28,13 @@ def main(sysargs=sys.argv[1:]):
     print("________________")
     print(method)
 
-    labels_train_file = snakemake.input["label_train"]
-    group = snakemake.wildcards.group
-    y_train = pd.read_csv(labels_train_file)[group]
-
-    print(group)
-    print(y_train)
-
-    mode, isBinary = get_mode(y_train)
-    print(mode)
-
     config_file = utility.config_reader(snakemake.input["conf"])
 
-    if method == "linear_model":
-        if mode == "Classification":
-            models = ["LR"]
-        if mode == "Regression":
-            models = ["LinR"]
-
-    for model in models:
-        print(model)
-        current_module = utility.my_import(config_file["Models"][model]["module"])
-        dClassifier = getattr(current_module, config_file["Models"][model]["model"])
-        dClassifier = dClassifier(**config_file["Models"][model]["params"])
+    model = snakemake.wildcards.model
+    print(model)
+    current_module = utility.my_import(config_file["Models"][model]["module"])
+    dClassifier = getattr(current_module, config_file["Models"][model]["model"])
+    dClassifier = dClassifier(**config_file["Models"][model]["params"])
 
     print(dClassifier)
     dump(dClassifier, snakemake.output[0])

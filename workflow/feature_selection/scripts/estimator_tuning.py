@@ -111,7 +111,7 @@ def main(sysargs=sys.argv[1:]):
                  ('estimator', estimator)])
 
     # Initialize GridSearch object
-    gscv = GridSearchCV(pipe, param_grid, cv = 5,  n_jobs= -1, verbose = 1, scoring = 'roc_auc')
+    gscv = GridSearchCV(pipe, param_grid, cv = 5,  n_jobs= -1, verbose = 1)
 
     # Fit gscv
     gscv.fit(X, y)

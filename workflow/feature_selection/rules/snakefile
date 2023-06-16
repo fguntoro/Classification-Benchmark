@@ -1,4 +1,5 @@
 import yaml
+import pandas as pd
 
 with open("config.yaml") as file:
     global_config = yaml.load(file, yaml.FullLoader)
@@ -7,6 +8,13 @@ input_dir = global_config["INPUT_DIR"] + "/"
 file_label = global_config["FILE_LABEL"] + "/"
 output_dir = global_config["OUTPUT_DIR"] + "/"
 
+def get_groups(config):
+    if config["GROUP"] == "all":
+        df = pd.read_csv(config["FILE_LABEL"], index_col=0)
+        groups = df.columns.tolist()
+    else:
+        groups = config["GROUP"]
+    return groups
 
 ###############################
 #                             #
@@ -45,17 +53,14 @@ rule consensus_clustering:
         "Rscript workflow/feature_selection/scripts/consensus_clustering.R {input.data} {input.label} {input.indices} {wildcards.group} {output}"
 
 
-def aggregate_base_feature_selection(datas, groups, base_feature_selections):
+def aggregate_base_feature_selection(base_feature_selections):
     files = list()
     path = output_dir + \
-        "{data}/{group}/feature_selection/{base_feature_selection}_indices.csv"
-    for data in datas:
-        for group in groups:
-            for base_feature_selection in base_feature_selections:
-                files.append(path.format(
-                    data=data,
-                    group=group,
-                    base_feature_selection=base_feature_selection))
+        "{{data}}/{{group}}/feature_selection/{base_feature_selection}_indices.csv"
+    
+    for base_feature_selection in base_feature_selections:
+        files.append(path.format(
+            base_feature_selection=base_feature_selection))
     return files
 
 rule estimator_tuning:
@@ -63,8 +68,6 @@ rule estimator_tuning:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
         label = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         indices = aggregate_base_feature_selection(
-            datas=global_config["FILE_DATA"],
-            groups=global_config["GROUP"],
             base_feature_selections=["correlated_features", "variance_threshold"]),
         conf = "workflow/feature_selection/rules/config.yml",
     output:
@@ -77,8 +80,6 @@ rule stability_analysis:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
         label = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         indices = aggregate_base_feature_selection(
-            datas=global_config["FILE_DATA"],
-            groups=global_config["GROUP"],
             base_feature_selections=["correlated_features", "variance_threshold"]),
         conf = "workflow/feature_selection/rules/config.yml",
     output:
@@ -92,8 +93,6 @@ rule boruta:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
         label = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         indices = aggregate_base_feature_selection(
-            datas=global_config["FILE_DATA"],
-            groups=global_config["GROUP"],
             base_feature_selections=["correlated_features", "variance_threshold"]),
         conf = "workflow/feature_selection/rules/config.yml",
         estimator = output_dir + "{data}/{group}/feature_selection/estimator_tuning/tuned_{estimator}.joblib",
@@ -111,8 +110,6 @@ rule feature_selection:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
         label = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         indices = aggregate_base_feature_selection(
-            datas=global_config["FILE_DATA"],
-            groups=global_config["GROUP"],
             base_feature_selections=["correlated_features", "variance_threshold"]),
         conf = "workflow/feature_selection/rules/config.yml",
         estimator = output_dir + "{data}/{group}/feature_selection/estimator_tuning/tuned_{estimator}.joblib",

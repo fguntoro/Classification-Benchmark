@@ -61,6 +61,14 @@ def main(sysargs=sys.argv[1:]):
 
     X = data
 
+    y = y.dropna()  # Remove NA values in y
+
+    # Find the corresponding indices of non-NA values in y
+    non_na_indices = y.index
+
+    # Remove corresponding rows in X
+    X = data.loc[non_na_indices]
+    
     print("Data shape: {}".format(X.shape))
     print("Label shape: {}".format(y.shape))
     print("_______________________________")

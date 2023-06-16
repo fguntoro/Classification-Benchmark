@@ -3,6 +3,7 @@ import glob
 import os.path
 from itertools import product
 import pandas as pd
+import numpy as np
 
 configfile: "workflow/prediction/rules/models_config.yml"
 
@@ -27,8 +28,6 @@ def get_groups(config):
 rule build_model:
    input:
        conf = "workflow/prediction/rules/models_config.yml",
-        label_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_train.csv",
    output:
        output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
    conda:
@@ -37,6 +36,8 @@ rule build_model:
        "../../prediction/scripts/build_model.py"
 
 def get_mode(y_train):
+    y_train = y_train.dropna()
+
     if all(isinstance(item, str) for item in y_train):
         unique_values = set(y_train)
         if len(unique_values) == 2:
@@ -67,14 +68,12 @@ rule evaluation:
             "{data}/{group}/preprocessing/split_data/X_test.csv",
         label_test = output_dir + \
             "{data}/{group}/preprocessing/split_data/y_test.csv",
-        model =        output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
+        model = output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
 
         conf = "workflow/prediction/rules/models_config.yml",
     output:
         evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-nofeatureselection.csv",
-        fitted_model = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-nofeatureselection.joblib",
+            "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
     conda:
         "../../prediction/envs/env.yml"
     threads: 8
@@ -100,9 +99,7 @@ use rule evaluation as evaluate_feature_selection with:
         feature_selection = "sklearn_.*"
     output:
         evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-{estimator}.csv",
-        fitted_model = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-{estimator}.joblib",
+            "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
 
 use rule evaluation as evaluate_boruta with:
     input:
@@ -115,15 +112,15 @@ use rule evaluation as evaluate_boruta with:
             "{data}/{group}/preprocessing/split_data/y_test.csv",
         features = output_dir + \
             "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
-        model = output_dir + "{data}/{group}/prediction/models/{method}.joblib",
+        model = output_dir + \
+            output_dir + \
+            "{data}/{group}/prediction/models/{method}/{model}.joblib",
         conf = "workflow/prediction/rules/models_config.yml",
     wildcard_constraints:
         feature_selection = "boruta"
     output:
         evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv",
-        fitted_model = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.joblib",
+            "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
 
 
 use rule evaluation as evaluate_stability with:
@@ -141,69 +138,32 @@ use rule evaluation as evaluate_stability with:
         conf = "workflow/prediction/rules/models_config.yml",
     output:
         evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-stability.csv",
-        fitted_model = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-stability.joblib",
-
-#  # the checkpoint that shall trigger re-evaluation of the DAG
-# checkpoint check_results:
-#     input: output_dir + \
-#         "{data}/{group}/prediction/results/{method}/{analysis}.csv"
-#     output: 
-#         directory(
-#             output_dir + "{data}/{group}/prediction/check_results/{method}/{analysis}")
-#     shell:
-#         "cp {input} {output}"
-
-# # an intermediate rule
-# rule intermediate:
-#     input:
-#         output_dir + \
-#         "{data}/{group}/prediction/results/{method}/{analysis}.csv"
-#     output:
-#         output_dir + \
-#         "{data}/{group}/prediction/check_results/{method}/{analysis}.csv"
-#     shell:
-#         "cp {input} {output}"
-
-# def aggregate_input(wildcards):
-#     checkpoint_output = checkpoints.check_results.get(**wildcards).output[0]
-#     print(checkpoint_output)
-#     return expand(output_dir + \
-#                   "{data}/{group}/prediction/check_results/{method}/{analysis}.csv",
-#                   data=config["FILE_DATA"],
-#                   group=get_groups(config),
-#                   method=config["METHODS"],
-#                   analysis=glob_wildcards(os.path.join(checkpoint_output, "{analysis}.csv")).analysis)
-
-
-
-# rule aggregate_summary_bymethod:
-#     input:
-#         aggregate_input
-#     output:
-#         output_dir + "{data}/{group}/prediction/results/{method}/{analysis}/summary.csv",
-#     script:
-#         "../../prediction/scripts/aggregate.py"
+            "{data}/{group}/prediction/results/{method}/{model}-stability.csv"
 
 
 def aggregate_feature_selection(datas, groups, methods, feature_selections, estimators):
     files = list()
     for data in datas:
         for group in groups:
-
             y_train = pd.read_csv(file_label)[group]
-            print(y_train)
             mode, isBinary = get_mode(y_train)
 
             for method in methods:
                 if method == "linear_model":
-                    if mode == "Classification" and isBinary:
+                    if mode == "Classification":
                         models = ["LR"]
                     elif mode == "Regression":
                         models = ["LinR"]
-                        
+
                 for model in models:
+                    path = output_dir + \
+                                "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
+                    files.append(path.format(
+                        data=data,
+                        group=group,
+                        method=method,
+                        model=model))
+                    
                     for feature_selection in feature_selections:
                         if feature_selection == "stability":
                             path = output_dir + \
@@ -216,9 +176,14 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                                 feature_selection=feature_selection))
                         elif feature_selection == "boruta":
                             path = output_dir + \
-                                "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv"
-                            for estimator in estimators:
-                                if estimator in ["DT", "RFC", "ET"]:
+                                "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
+                            for estimatorType in estimators:
+                                if estimatorType == "RF":
+                                    if mode == "Classification" and isBinary:
+                                        estimator = "RFC"
+                                    elif mode == "Regression":
+                                        estimator = "RFR"
+                                if estimator in ["DT", "RFC", "ET", "RFR"]:
                                     files.append(path.format(
                                         data=data,
                                         group=group,
@@ -228,8 +193,13 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                                         estimator=estimator))
                         else:
                             path = output_dir + \
-                                "{data}/{group}/prediction/results/{method}/{feature_selection}-{estimator}.csv"
-                            for estimator in estimators:
+                                "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
+                            for estimatorType in estimators:
+                                if estimatorType == "RF":
+                                    if mode == "Classification" and isBinary:
+                                        estimator = "RFC"
+                                    elif mode == "Regression":
+                                        estimator = "RFR"
                                 files.append(path.format(
                                     data=data,
                                     group=group,
@@ -237,12 +207,7 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                                     model=model,
                                     feature_selection=feature_selection,
                                     estimator=estimator))
-    
-    print(files)
-
     return files
-
-
 
 
 rule aggregate_summary:
@@ -251,13 +216,14 @@ rule aggregate_summary:
         #     output_dir +
         #     "{data}/{group}/prediction/results/{method}/{model}-nofeatureselection.csv",
         #     method=global_config["METHODS"],
-        #     data=wildcards.data,
-        #     group=wildcards.group,
+        #     data=global_config["FILE_DATA"],
+        #     group=get_groups(global_config),
+        #     model=
         #     allow_missing=True,
         # ),
         aggregate_feature_selection(
             datas=global_config["FILE_DATA"],
-            groups=global_config["GROUP"],
+            groups=get_groups(global_config),
             methods=global_config["METHODS"],
             feature_selections=global_config["FEATURE_SELECTION"],
             estimators=global_config["ESTIMATOR"],
@@ -265,6 +231,6 @@ rule aggregate_summary:
     params:
         config = config,
     output:
-        output_dir + "{data}/{group}/prediction/summary.csv",
+        output_dir + "summary.csv",
     script:
         "../../prediction/scripts/aggregate.py"

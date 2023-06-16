@@ -1,6 +1,24 @@
 library(sharp)
 library(argparse)
 
+get_mode <- function(y_train) {
+  if (all(sapply(y_train, is.character))) {
+    unique_values <- unique(y_train)
+    if (length(unique_values) == 2) {
+      return("Classification")
+    } else {
+      return("Classification")
+    }
+  } else if (all(sapply(y_train, is.numeric))) {
+    if (all(sapply(y_train, function(item) item == 0 || item == 1))) {
+      return("Classification")
+    } else {
+      return("Regression")
+    }
+  }
+}
+
+
 # Loading the arguments
 parser <- ArgumentParser()
 parser$add_argument("--path_data", help = "Path to data file")
@@ -23,15 +41,22 @@ path_to_output <- args$output
 output_dir <- dirname(path_to_output)
 #dir.create(file.path(output_dir), recursive = TRUE)
 
-mydat <- read.csv(path_to_dat, row.names = "X")
-mylabels <- read.csv(path_to_label, row.names = "X")
+mydat <- read.csv(path_to_dat, row.names = 1)
+mylabels <- read.csv(path_to_label, row.names = 1)
 
 for (i in length(path_to_indices)) {
   feature_to_remove <- read.csv(path_to_indices[i])
   mydat <- mydat[, !(colnames(mydat) %in% feature_to_remove$feature)]
 }
 
+df <- merge(mylabels, mydat, by = "row.names")
+rownames(df) <- df$Row.names
+df$Row.names <- NULL
+df <- df[which(!is.na(df[,1])), ]
+mydat <- df[, 2:ncol(df)]
+
 print(dim(mydat))
+head(mydat)
 
 if (ncol(mylabels) == 1) {
   outcome <- mylabels[row.names(mydat),]
@@ -40,6 +65,16 @@ if (ncol(mylabels) == 1) {
 }
 
 head(outcome)
+
+mode = get_mode(outcome)
+print(mode)
+
+if (mode == "Classification") {
+  family = "binomial"
+} else if (mode == "Regression") {
+  family = "gaussian"
+}
+print(family)
 
 ###
 # Variable selection
@@ -59,6 +94,8 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
   
   calprop_out <- paste0(dir, "/calibration_plot_", suffix, ".png")
   cat("Printing figure to", calprop_out, "\n")
+  print(head(stab$S_2d))
+  print(head(stab$selprop))
   png(calprop_out, width = 1200, height= 800, res = 150)
   grid::grid.newpage()
   grid::grid.draw(CalibrationPlot(stab))
@@ -82,7 +119,6 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
     selected <- SelectedVariables(stab)
     p <- sum(selected)
     features <- names(selprop)[sort.list(selprop, decreasing = TRUE)][1:p]
-    features <- gsub("[.]", " ", features)
     features <- data.frame(feature = features)
 
     write.csv(features, path_to_output, row.names = F)
@@ -90,7 +126,7 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
   return(stab)
 }
 
-stab <- stability_analysis(mydat, outcome, family="binomial", penalty = NULL, dir = output_dir)
+stab <- stability_analysis(mydat, outcome, family=family, penalty = NULL, dir = output_dir)
 saveRDS(stab, paste0(output_dir,"/stab.rds"))
 
 
