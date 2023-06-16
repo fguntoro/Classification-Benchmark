@@ -1,12 +1,20 @@
+# Importing libraries
+
 import yaml
 import pandas as pd
+
+# Reading configuration from a YAML file
 
 with open("config.yaml") as file:
     global_config = yaml.load(file, yaml.FullLoader)
 
+# Initializing variables from global config
+
 input_dir = global_config["INPUT_DIR"] + "/"
 file_label = global_config["FILE_LABEL"] + "/"
 output_dir = global_config["OUTPUT_DIR"] + "/"
+
+# Function to get groups
 
 def get_groups(config):
     if config["GROUP"] == "all":
@@ -16,12 +24,14 @@ def get_groups(config):
         groups = config["GROUP"]
     return groups
 
+
 ###############################
 #                             #
 # Rules for Feature Selection #
 #                             #
 ###############################
 
+# Rule for variance threshold feature selection
 rule variance_threshold:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
@@ -31,6 +41,7 @@ rule variance_threshold:
     shell:
         "python workflow/feature_selection/scripts/sklearn_feature_selection.py --path_data {input.data} --config {input.conf} --group {wildcards.group} --output {output} --feature_selection VarianceThreshold"
 
+# Rule for correlated features selection
 rule correlated_features:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
@@ -41,6 +52,7 @@ rule correlated_features:
     shell:
         "python workflow/feature_selection/scripts/correlated_features.py --path_data {input.data} --config {input.conf} --indices {input.indices} --group {wildcards.group} --output {output} --correlation_threshold 0.90"
 
+# Rule for consensus clustering feature selection
 rule consensus_clustering:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
@@ -52,7 +64,7 @@ rule consensus_clustering:
     shell:
         "Rscript workflow/feature_selection/scripts/consensus_clustering.R {input.data} {input.label} {input.indices} {wildcards.group} {output}"
 
-
+# Function to aggregate base feature selections
 def aggregate_base_feature_selection(base_feature_selections):
     files = list()
     path = output_dir + \
@@ -63,6 +75,7 @@ def aggregate_base_feature_selection(base_feature_selections):
             base_feature_selection=base_feature_selection))
     return files
 
+# Rule for estimator tuning
 rule estimator_tuning:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
@@ -75,6 +88,7 @@ rule estimator_tuning:
     shell:
         "python workflow/feature_selection/scripts/estimator_tuning.py --path_data {input.data} --file_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --estimator_name {wildcards.estimator} --output {output}"
 
+# Rule for stability analysis
 rule stability_analysis:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
@@ -88,6 +102,7 @@ rule stability_analysis:
     shell:
         "Rscript workflow/feature_selection/scripts/stability_analysis.R --path_data {input.data} --file_label {input.label} --indices {input.indices} --group {wildcards.group} --output {output}"
 
+# Rule for Boruta feature selection
 rule boruta:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
@@ -104,7 +119,7 @@ rule boruta:
     shell:
         "python workflow/feature_selection/scripts/boruta_analysis.py --path_data {input.data} --file_label {input.label} --indices {input.indices} --config {input.conf} --group {wildcards.group} --output {output} --estimator {input.estimator}"
 
-
+# Rule for generic feature selection
 rule feature_selection:
     input:
         data = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
