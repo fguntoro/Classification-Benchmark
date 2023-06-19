@@ -73,7 +73,7 @@ rule evaluation:
         conf = "workflow/prediction/rules/models_config.yml",
     output:
         evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-nofeatureselection.csv"
+            "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
     conda:
         "../../prediction/envs/env.yml"
     threads: 8
