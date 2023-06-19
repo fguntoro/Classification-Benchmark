@@ -73,7 +73,7 @@ def main():
 
     print("Mode = ", mode)
     print("Model = ", model)
-    print("Config file = ", method_config_file)
+    print("Config file = ", config_file)
     print("Optimization = ", optimization)
     print("_______________________________")
 

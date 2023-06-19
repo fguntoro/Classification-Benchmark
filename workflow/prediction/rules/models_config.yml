@@ -30,9 +30,10 @@ Models:
     model: LogisticRegression
     params:
       n_jobs: -1
-      penalty: "None"
+      penalty: "l2"
       class_weight: "balanced"
       solver: "lbfgs"
+      C: 1.e10  # Set a large value for C to effectively disable regularization
       max_iter: 10000
     cv:
       max_iter: np.logspace(3, 5, base=10, num=3, dtype=int)
