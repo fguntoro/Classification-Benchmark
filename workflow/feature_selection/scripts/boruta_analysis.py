@@ -19,6 +19,7 @@ def main(sysargs=sys.argv[1:]):
     print("_______________________________")
     print("Running Feature Selection")
 
+    # Parsing command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--path_data",
@@ -80,17 +81,17 @@ def main(sysargs=sys.argv[1:]):
     path_indices = args.indices
     estimator = load(args.estimator)
 
-
     ## LOAD DATA
     X = pd.read_csv(path_data, index_col=0)
 
+    # Removing features based on specified indices
     for file in path_indices:
         feature_names_remove = pd.read_csv(file)['feature']
         
         # Drop the features from DataFrame X if they exist
         existing_features = set(X.columns)
         features_to_drop = list(filter(lambda f: f in existing_features, feature_names_remove))
-        X = X.drop(features_to_drop, axis =1)
+        X = X.drop(features_to_drop, axis=1)
 
     Xval = X.values
     y = pd.read_csv(file_label, index_col=0)
@@ -98,18 +99,22 @@ def main(sysargs=sys.argv[1:]):
 
     config_file = utility.config_reader(args.config)
 
-    # define Boruta feature selection method
+    # Define Boruta feature selection method
     Feature_Selector = BorutaPy(estimator, n_estimators='auto', verbose=2, random_state=12345)
 
     print(Feature_Selector)
 
+    # Creating a pipeline with feature scaling and Boruta feature selection
     pipe = Pipeline([('scaler', MinMaxScaler()),
                  ('selector', Feature_Selector)])
     
-    
-    pipe.fit(Xval,y)
+    # Fitting the pipeline on the data
+    pipe.fit(Xval, y)
 
-    results =  X.columns[Feature_Selector.support_]
-    pd.DataFrame({"feature":results}).to_csv(output, index=False)
+    # Retrieving the selected features
+    results = X.columns[Feature_Selector.support_]
+
+    # Saving the selected features to the output file
+    pd.DataFrame({"feature": results}).to_csv(output, index=False)
 
 main()
