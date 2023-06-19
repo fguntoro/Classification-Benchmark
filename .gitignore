@@ -4,4 +4,8 @@
 AllLabels.csv
 ukb_var_denoised.csv
 output
-workflow/**/*.pyv
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
