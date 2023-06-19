@@ -198,12 +198,9 @@ def main():
     result.insert(6, "N_feature", n_features)
     result.insert(7, "Time", end_time - start_time)
 
-    # Append the result to the results DataFrame
-    results = results.append(result)
     print("_______________________________")
-
     print("Saving results to {0}".format(output_evaluation))
-    results.to_csv(output_evaluation, index=False)
+    result.to_csv(output_evaluation, index=False)
 
 
 main()
