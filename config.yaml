@@ -1,11 +1,11 @@
-INPUT_DIR: "./example_data"
+INPUT_DIR: "example_data"
 
 FILE_DATA: ["madelon_like_X"]
-FILE_LABEL: "./example_data/madelon_like_y.csv"
+FILE_LABEL: "example_data/madelon_like_y.csv"
 
 GROUP: "all"
 
-OUTPUT_DIR: "./output"
+OUTPUT_DIR: "output"
 
 FEATURE_SELECTION: ["stability", "boruta", "sklearn_RFE"]
 ESTIMATOR: ["RF"]
