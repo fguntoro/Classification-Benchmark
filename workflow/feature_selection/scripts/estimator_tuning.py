@@ -18,6 +18,7 @@ def main(sysargs=sys.argv[1:]):
     print("_______________________________")
     print("Tuning estimator")
 
+    # Parsing command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--path_data",
@@ -72,7 +73,6 @@ def main(sysargs=sys.argv[1:]):
     output = args.output
     path_indices = args.indices
 
-
     ### Load Data
     X = pd.read_csv(path_data, index_col=0)
 
@@ -82,7 +82,7 @@ def main(sysargs=sys.argv[1:]):
         # Drop the features from DataFrame X if they exist
         existing_features = set(X.columns)
         features_to_drop = list(filter(lambda f: f in existing_features, feature_names_remove))
-        X = X.drop(features_to_drop, axis =1)
+        X = X.drop(features_to_drop, axis=1)
 
     y = pd.read_csv(file_label)
     y = np.ravel(y[group])
@@ -106,12 +106,12 @@ def main(sysargs=sys.argv[1:]):
     param_grid = {ele: (list(param_grid[ele])) for ele in param_grid}
     print(param_grid)
 
-
+    # Create a pipeline with scaler and estimator
     pipe = Pipeline([('scaler', MinMaxScaler()),
-                 ('estimator', estimator)])
+                     ('estimator', estimator)])
 
     # Initialize GridSearch object
-    gscv = GridSearchCV(pipe, param_grid, cv = 5,  n_jobs= -1, verbose = 1)
+    gscv = GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1, verbose=1)
 
     # Fit gscv
     gscv.fit(X, y)
@@ -123,10 +123,13 @@ def main(sysargs=sys.argv[1:]):
     best_score = gscv.best_score_
     print(best_params)
 
-    # Update classifier parameters
+    # Update classifier parameters with best_params
     estimator.set_params(**best_params)
 
     print(estimator)
+
+    # Save the tuned estimator to output file
     dump(estimator, output)
+
 
 main()

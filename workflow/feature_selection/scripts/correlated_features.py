@@ -4,47 +4,43 @@ import os
 import numpy as np
 import pandas as pd
 
-def correlated_features(X, correlation_threshold = 0.90):
+def correlated_features(X, correlation_threshold=0.90):
     """
     Identifies features that are highly correlated. Let's assume that if
-    two features or more are highly correlated, we can randomly select
+    two or more features are highly correlated, we can randomly select
     one of them and discard the rest without losing much information.
-    
     
     Parameters
     ----------
-    X : pandas dataframe
-        A data set where each row is an observation and each column a feature.
+    X : pandas DataFrame
+        A data set where each row is an observation and each column is a feature.
         
-    correlation_threshold: float, optional (default = 0.90)
+    correlation_threshold: float, optional (default=0.90)
         The threshold used to identify highly correlated features.
         
     Returns
     -------
     labels: list
-        A list with the labels identifying the features that contain a 
-        large fraction of constant values.
+        A list with the labels identifying the features that are highly correlated.
     """
     
     # Make correlation matrix
-    corr_matrix = X.corr(method = "spearman").abs()
-    
+    corr_matrix = X.corr(method="spearman").abs()
     
     # Select upper triangle of matrix
-    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k = 1).astype(bool))
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
     
-
     # Find index of feature columns with correlation greater than correlation_threshold
-    labels = [column for column in upper.columns if any(upper[column] >  correlation_threshold)]
+    labels = [column for column in upper.columns if any(upper[column] > correlation_threshold)]
     
     return labels
-
 
 
 def main(sysargs=sys.argv[1:]):
     print("_______________________________")
     print("Removing Correlated Features")
 
+    # Parsing command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--path_data",
@@ -93,13 +89,15 @@ def main(sysargs=sys.argv[1:]):
     X = pd.read_csv(path_data)
     col_idx_names = pd.read_csv(path_indices)['feature']
 
+    # Dropping columns based on specified indices
     X = X.drop(col_idx_names, axis=1)
 
     results = correlated_features(X, correlation_threshold=correlation_threshold)
 
     print(results)
 
-    pd.DataFrame({"feature":results}).to_csv(output, index=False)
+    # Saving the correlated features to the output file
+    pd.DataFrame({"feature": results}).to_csv(output, index=False)
 
 
 main()

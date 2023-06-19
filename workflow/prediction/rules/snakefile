@@ -5,17 +5,19 @@ from itertools import product
 import pandas as pd
 import numpy as np
 
-configfile: "workflow/prediction/rules/models_config.yml"
+# Load the models_config YAML file
+configfile = "workflow/prediction/rules/models_config.yml"
 
-
+# Load the global_config YAML file
 with open("config.yaml") as file:
     global_config = yaml.load(file, yaml.FullLoader)
 
+# Set the input and output directories
 input_dir = global_config["INPUT_DIR"] + "/"
 file_label = global_config["FILE_LABEL"]
 output_dir = global_config["OUTPUT_DIR"] + "/"
 
-
+# Function to get the groups based on the configuration
 def get_groups(config):
     if config["GROUP"] == "all":
         df = pd.read_csv(config["FILE_LABEL"], index_col=0)
@@ -24,10 +26,10 @@ def get_groups(config):
         groups = config["GROUP"]
     return groups
 
-
+# Rule to build the model
 rule build_model:
     input:
-       conf = "workflow/prediction/rules/models_config.yml",
+        conf = "workflow/prediction/rules/models_config.yml",
     output:
         output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
     conda:
@@ -35,6 +37,7 @@ rule build_model:
     script:
         "../../prediction/scripts/build_model.py"
 
+# Function to determine the mode of the target variable
 def get_mode(y_train):
     y_train = y_train.dropna()
 
@@ -51,95 +54,67 @@ def get_mode(y_train):
         else:
             return "Regression", False
 
-# def get_models(global_config, label_file):
-#     y_train = pd.read_csv(label_file)[1]
-#     mode = get_mode(y_train)
-#     methods = global_config["METHODS"]
-#     print(mode)
-
-
+# Rule for evaluation
 rule evaluation:
     input:
-        data_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/X_train.csv",
-        label_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_train.csv",
-        data_test = output_dir + \
-            "{data}/{group}/preprocessing/split_data/X_test.csv",
-        label_test = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_test.csv",
-        model = output_dir + \
-            "{data}/{group}/prediction/models/{method}/{model}.joblib",
+        data_train = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
+        label_test = output_dir + "{data}/{group}/preprocessing/split_data/y_test.csv",
+        model = output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
         conf = "workflow/prediction/rules/models_config.yml",
     output:
-        evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
+        evaluation = output_dir + "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
     conda:
         "../../prediction/envs/env.yml"
     threads: 8
     script:
         "../../prediction/scripts/evaluation.py"
 
-
+# Rule for evaluating feature selection using the evaluate_feature_selection rule
 use rule evaluation as evaluate_feature_selection with:
     input:
-        data_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/X_train.csv",
-        label_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_train = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
-        label_test = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_test.csv",
-        features = output_dir + \
-            "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
-        model = output_dir + \
-            output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
+        label_test = output_dir + "{data}/{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
+        model = output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
         conf = "workflow/prediction/rules/models_config.yml",
     wildcard_constraints:
         feature_selection = "sklearn_.*"
     output:
-        evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
+        evaluation = output_dir + "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
 
+# Rule for evaluating feature selection using the evaluate_boruta rule
 use rule evaluation as evaluate_boruta with:
     input:
-        data_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/X_train.csv",
-        label_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_train = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
-        label_test = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_test.csv",
-        features = output_dir + \
-            "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
-        model = output_dir + \
-            output_dir + \
-            "{data}/{group}/prediction/models/{method}/{model}.joblib",
+        label_test = output_dir + "{data}/{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + "{data}/{group}/feature_selection/{feature_selection}/{feature_selection}-{estimator}.csv",
+        model = output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
         conf = "workflow/prediction/rules/models_config.yml",
     wildcard_constraints:
         feature_selection = "boruta"
     output:
-        evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
+        evaluation = output_dir + "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
 
-
+# Rule for evaluating feature selection using the evaluate_stability rule
 use rule evaluation as evaluate_stability with:
     input:
-        data_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/X_train.csv",
-        label_train = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_train.csv",
+        data_train = output_dir + "{data}/{group}/preprocessing/split_data/X_train.csv",
+        label_train = output_dir + "{data}/{group}/preprocessing/split_data/y_train.csv",
         data_test = output_dir + "{data}/{group}/preprocessing/split_data/X_test.csv",
-        label_test = output_dir + \
-            "{data}/{group}/preprocessing/split_data/y_test.csv",
-        features = output_dir + \
-            "{data}/{group}/feature_selection/stability/stability.csv",
-        model = output_dir + output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
+        label_test = output_dir + "{data}/{group}/preprocessing/split_data/y_test.csv",
+        features = output_dir + "{data}/{group}/feature_selection/stability/stability.csv",
+        model = output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
         conf = "workflow/prediction/rules/models_config.yml",
     output:
-        evaluation = output_dir + \
-            "{data}/{group}/prediction/results/{method}/{model}-stability.csv"
+        evaluation = output_dir + "{data}/{group}/prediction/results/{method}/{model}-stability.csv"
 
+# Function to aggregate feature selection files
 def aggregate_feature_selection(datas, groups, methods, feature_selections, estimators):
     files = list()
     for data in datas:
@@ -155,8 +130,7 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                         models = ["LinR"]
 
                 for model in models:
-                    path = output_dir + \
-                                "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
+                    path = output_dir + "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
                     files.append(path.format(
                         data=data,
                         group=group,
@@ -165,8 +139,7 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
 
                     for feature_selection in feature_selections:
                         if feature_selection == "stability":
-                            path = output_dir + \
-                                "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}.csv"
+                            path = output_dir + "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}.csv"
                             files.append(path.format(
                                 data=data,
                                 group=group,
@@ -174,8 +147,7 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                                 model=model,
                                 feature_selection=feature_selection))
                         elif feature_selection == "boruta":
-                            path = output_dir + \
-                                "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
+                            path = output_dir + "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
                             for estimatorType in estimators:
                                 if estimatorType == "RF":
                                     if mode == "Classification" and isBinary:
@@ -191,8 +163,7 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                                         feature_selection=feature_selection,
                                         estimator=estimator))
                         else:
-                            path = output_dir + \
-                                "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
+                            path = output_dir + "{data}/{group}/prediction/results/{method}/{model}-{feature_selection}-est{estimator}.csv"
                             for estimatorType in estimators:
                                 if estimatorType == "RF":
                                     if mode == "Classification" and isBinary:
@@ -208,8 +179,7 @@ def aggregate_feature_selection(datas, groups, methods, feature_selections, esti
                                     estimator=estimator))
     return files
 
-
-
+# Rule for aggregating the summary
 rule aggregate_summary:
     input:
         aggregate_feature_selection(

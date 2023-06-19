@@ -4,6 +4,7 @@ import time
 import pandas as pd
 from scipy import sparse
 
+# Input and output file paths
 data_train_file = snakemake.input["data_train"]
 labels_train_file = snakemake.input["label_train"]
 data_test_file = snakemake.input["data_test"]
@@ -14,10 +15,13 @@ method_config_file = snakemake.input["conf"]
 group = snakemake.wildcards.group
 data = snakemake.wildcards.data
 
+# Optimization configuration
 optimization = snakemake.config["OPTIMIZATION"]
 
+# Output evaluation file path
 output_evaluation = snakemake.output["evaluation"]
 
+# Function to determine the mode of the target variable
 def get_mode(y_train):
     if all(isinstance(item, str) for item in y_train):
         unique_values = set(y_train)
@@ -32,6 +36,7 @@ def get_mode(y_train):
         else:
             return "Regression", False
 
+# Main function
 def main():
     from joblib import dump
     from sklearn.preprocessing import MinMaxScaler
@@ -49,20 +54,21 @@ def main():
     import shap
     import matplotlib.pyplot as plt
 
-
-    #label.set_index(label.columns[0], inplace=True, drop=True)
+    # Read the configuration file
     config_file = utility.config_reader(method_config_file)
 
+    # DataFrame to store results
     results = pd.DataFrame()
 
     print("Analysing {0}".format(group))
 
+    # Read data and labels
     X_train = pd.read_csv(data_train_file, index_col=0)
     y_train = pd.read_csv(labels_train_file)[group]
     X_test = pd.read_csv(data_test_file, index_col=0)
     y_test = pd.read_csv(labels_test_file)[group]
 
-
+    # Determine the mode of the target variable
     mode, isBinary = get_mode(y_train)
 
     print("Mode = ", mode)
@@ -71,6 +77,7 @@ def main():
     print("Optimization = ", optimization)
     print("_______________________________")
 
+    # Feature selection and estimator settings
     if hasattr(snakemake.input, "features"):
         feature_file = snakemake.input["features"]
         features = pd.read_csv(feature_file)["feature"]
@@ -84,30 +91,24 @@ def main():
         except AttributeError:
             feature_selection = "stability"
             estimator = "none"
-        
     else:
         feature_selection = "none"
         estimator = "none"
 
-    
-    #X_train = MinMaxScaler().fit_transform(X_train)
-    #X_train = sparse.csr_matrix(X_train)
-
+    # Data preprocessing
     n_features = len(X_test.columns)
     print(n_features)
-    #X_test = MinMaxScaler().fit_transform(X_test)
-    #X_test = sparse.csr_matrix(X_test)
 
     print("Train data shape: {}".format(X_train.shape))
     print("Train label shape: {}".format(y_train.shape))
     print("Test data shape: {}".format(X_test.shape))
     print("Test label shape: {}".format(y_test.shape))
     print("_______________________________")
-    
+
     start_time = time.time()
 
     if n_features != 0:
-
+        # Model fitting
         print("Fitting training data")
         clf, best_parameters = model_fitting(
             group,
@@ -122,13 +123,13 @@ def main():
         )
         print("_______________________________")
 
+        # Model testing
         print("Testing")
         y_pred = clf.predict(X_test)
         print("_______________________________")
 
+        # Model evaluation
         print("Evaluating")
-
-
         if mode == "Classification":
             if hasattr(clf, "best_estimator_"):
                 best_model = clf.best_estimator_.fit(X_train, y_train)
@@ -187,6 +188,7 @@ def main():
 
     end_time = time.time()
 
+    # Update the result DataFrame
     result.insert(0, "Data", data)
     result.insert(1, "Group", group)
     result.insert(2, "Method", modelname)
@@ -196,7 +198,7 @@ def main():
     result.insert(6, "N_feature", n_features)
     result.insert(7, "Time", end_time - start_time)
 
-    # results = pd.concat([results, result])
+    # Append the result to the results DataFrame
     results = results.append(result)
     print("_______________________________")
 

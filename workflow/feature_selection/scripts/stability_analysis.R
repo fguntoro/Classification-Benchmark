@@ -1,6 +1,7 @@
 library(sharp)
 library(argparse)
 
+# Function to determine the mode of the target variable
 get_mode <- function(y_train) {
   if (all(sapply(y_train, is.character))) {
     unique_values <- unique(y_train)
@@ -18,7 +19,6 @@ get_mode <- function(y_train) {
   }
 }
 
-
 # Loading the arguments
 parser <- ArgumentParser()
 parser$add_argument("--path_data", help = "Path to data file")
@@ -35,15 +35,12 @@ path_to_indices <- args$indices
 group <- args$group
 path_to_output <- args$output
 
-###
-# 01 Stability analysis LASSO ----------------------------------------------------------
-###
+# Stability analysis LASSO
 output_dir <- dirname(path_to_output)
-#dir.create(file.path(output_dir), recursive = TRUE)
+mydat <- read.csv(path_to_dat, row.names = 1, check.names=FALSE)
+mylabels <- read.csv(path_to_label, row.names = 1, check.names=FALSE)
 
-mydat <- read.csv(path_to_dat, row.names = 1)
-mylabels <- read.csv(path_to_label, row.names = 1)
-
+# Remove features based on indices file
 for (i in length(path_to_indices)) {
   feature_to_remove <- read.csv(path_to_indices[i])
   mydat <- mydat[, !(colnames(mydat) %in% feature_to_remove$feature)]
@@ -58,6 +55,7 @@ mydat <- df[, 2:ncol(df)]
 print(dim(mydat))
 head(mydat)
 
+# Get the outcome variable based on the label file and group
 if (ncol(mylabels) == 1) {
   outcome <- mylabels[row.names(mydat),]
 } else {
@@ -66,6 +64,7 @@ if (ncol(mylabels) == 1) {
 
 head(outcome)
 
+# Determine the mode (classification or regression)
 mode = get_mode(outcome)
 print(mode)
 
@@ -76,9 +75,7 @@ if (mode == "Classification") {
 }
 print(family)
 
-###
-# Variable selection
-###
+# Variable selection using stability analysis
 stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, suffix="", dir = "") {
   
   if(is.null(penalty)) {
@@ -92,6 +89,7 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
                            tau = 0.8)
   }
   
+  # Create and save calibration plot
   calprop_out <- paste0(dir, "/calibration_plot_", suffix, ".png")
   cat("Printing figure to", calprop_out, "\n")
   print(head(stab$S_2d))
@@ -101,6 +99,7 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
   grid::grid.draw(CalibrationPlot(stab))
   dev.off()
   
+  # Create and save selection proportions plot
   selprop=SelectionProportions(stab)
   selprop_ranked=sort(selprop, decreasing=TRUE)
   
@@ -114,19 +113,17 @@ stability_analysis <- function(xdata, ydata, family="gaussian", penalty=NULL, su
   abline(h=Argmax(stab)[2], lty=2, col="darkred")
   axis(side=1, at=1:length(selprop_ranked), labels=names(selprop_ranked), las=2)
   dev.off()
-
   
-    selected <- SelectedVariables(stab)
-    p <- sum(selected)
-    features <- names(selprop)[sort.list(selprop, decreasing = TRUE)][1:p]
-    features <- data.frame(feature = features)
-
-    write.csv(features, path_to_output, row.names = F)
+  # Get the selected variables and save them to the output file
+  selected <- SelectedVariables(stab)
+  p <- sum(selected)
+  features <- names(selprop)[sort.list(selprop, decreasing = TRUE)][1:p]
+  features <- data.frame(feature = features)
+  
+  write.csv(features, path_to_output, row.names = F)
   
   return(stab)
 }
 
 stab <- stability_analysis(mydat, outcome, family=family, penalty = NULL, dir = output_dir)
 saveRDS(stab, paste0(output_dir,"/stab.rds"))
-
-
