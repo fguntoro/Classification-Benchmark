@@ -32,8 +32,6 @@ rule build_model:
         conf = "workflow/prediction/rules/models_config.yml",
     output:
         output_dir + "{data}/{group}/prediction/models/{method}/{model}.joblib",
-    conda:
-        "../../prediction/envs/env.yml"
     script:
         "../../prediction/scripts/build_model.py"
 
@@ -65,8 +63,6 @@ rule evaluation:
         conf = "workflow/prediction/rules/models_config.yml",
     output:
         evaluation = output_dir + "{data}/{group}/prediction/results/{method}/{model}-noFeatureSelection.csv"
-    conda:
-        "../../prediction/envs/env.yml"
     threads: 8
     script:
         "../../prediction/scripts/evaluation.py"
