@@ -4,4 +4,4 @@
 AllLabels.csv
 ukb_var_denoised.csv
 output
-workflow/*/scripts/__pycache__/*
+workflow/**/*.pyv
