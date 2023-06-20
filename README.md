@@ -51,3 +51,58 @@ METHODS: ["linear_model"]
 OPTIMIZATION: "GridSearchCV"
 ```
 
+## Output
+The results folder is organized as such:
+<pre>
+output  
+|  
+|---- dataset 1
+|       |
+|       |---- label 1
+|       |       |---- feature_selection (feature names, importance)
+|       |       |---- prediction (results, models)
+|       |       |---- preprocessing (train-test split)
+|       |
+|       |---- label 2
+|               |---- feature_selection
+|               |---- prediction
+|               |---- preprocessing
+|
+|---- dataset 2
+|       |
+|       |---- label 1
+|       |       |---- feature_selection
+|       |       |---- prediction
+|       |       |---- preprocessing
+|       |
+|       |---- label ...
+|
+|---- dataset ...
+</pre>
+
+## Adaptation
+<pre>
+To adapt configuration of the pipeline, there are different snakefile and config files:
+
+|---- workflow
+|       |
+|       |---- feature_selection
+|       |       |
+|       |       |---- rules
+|       |               |---- config.yml (estimators)
+|       |               |---- snakefile
+|       |
+|       |---- prediction
+|       |       |
+|       |       |---- rules
+|       |               |---- models_config.yml (models, cross-val)
+|       |               |---- snakefile
+|       |
+|       |---- preprocessing
+|               |
+|               |---- rules
+|                       |---- snakefile
+|
+|---- config.yaml (paths, models, etc)
+|---- Snakefile
+</pre>
